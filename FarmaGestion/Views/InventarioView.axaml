@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="clr-namespace:FarmaGestion.ViewModels" x:Class="FarmaGestion.Views.InventarioView" x:DataType="vm:InventarioViewModel">
+    
+    <!-- Dividimos la pantalla en dos filas: la barra superior (Auto) y la tabla (todo el espacio restante *) -->
+    <Grid RowDefinitions="Auto, *">
+        
+        <!-- BARRA SUPERIOR: Buscador y Botones -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="15" Margin="20">
+            <!-- Este TextBox será clave más adelante para capturar el lector de código de barras USB -->
+            <TextBox Watermark="Buscar o escanear código de barras..." Width="350" FontSize="16"/>
+            
+            <Button Content="Registrar Producto" 
+                    Click="BtnRegistrar_Click"
+                    Background="#28a745" Foreground="White" 
+                    FontWeight="Bold" Padding="15,8"/>
+            
+            <Button Content="Importar CSV" 
+                    Click="BtnImportarCSV_Click"
+                    Background="#17a2b8" Foreground="White" 
+                    FontWeight="Bold" Padding="15,8"/>
+        </StackPanel>
+
+        <!-- TABLA DE INVENTARIO -->
+        <!-- Vinculamos la fuente de datos a la propiedad Medicamentos del ViewModel -->
+        <DataGrid Grid.Row="1" Margin="20,0,20,20" ItemsSource="{Binding Medicamentos}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All" BorderThickness="1" BorderBrush="LightGray">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Código" Binding="{Binding CodigoBarras}" Width="150"/>
+                <DataGridTextColumn Header="Nombre del Medicamento" Binding="{Binding Nombre}" Width="*"/>
+                
+                <!-- El StringFormat='{}{0:C}' toma la configuración regional del sistema (es-GT) y pone la Q automáticamente -->
+                <DataGridTextColumn Header="Precio" Binding="{Binding Precio, StringFormat='{}{0:C}'}" Width="120"/>
+                
+                <DataGridTextColumn Header="Existencias" Binding="{Binding Existencias}" Width="120"/>
+                <DataGridTextColumn Header="Última Actualización" Binding="{Binding FechaUltimaActualizacion, StringFormat='{}{0:dd/MM/yyyy}'}" Width="180"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        
+    </Grid>
+</UserControl>
