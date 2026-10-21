@@ -8,6 +8,9 @@ namespace FarmaGestion.Models;
 
 public class Medicamentos
 {
+    /// <summary>Con esta cantidad o menos (y más de cero) el producto se marca como "bajo stock".</summary>
+    public const int UmbralBajoStock = 5;
+
     public int Id { get; set; }
 
     [Required(ErrorMessage = "El código de barras es obligatorio.")]
@@ -30,6 +33,9 @@ public class Medicamentos
 
     /// <summary>Existencias totales: suma de todos los lotes (incluye vencidos).</summary>
     [NotMapped] public int Existencias => Lotes.Sum(l => l.Existencias);
+
+    /// <summary>True cuando quedan pocas unidades (entre 1 y el umbral).</summary>
+    [NotMapped] public bool BajoStock => Existencias > 0 && Existencias <= UmbralBajoStock;
 
     /// <summary>Unidades en lotes ya vencidos.</summary>
     [NotMapped] public int ExistenciasVencidas => Lotes.Where(l => l.Vencido).Sum(l => l.Existencias);

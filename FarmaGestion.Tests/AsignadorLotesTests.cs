@@ -106,6 +106,18 @@ public class AsignadorLotesTests
     }
 
     [Fact]
+    public void Medicamento_BajoStock_EsDeUnoAlUmbral()
+    {
+        static Medicamentos Con(int unidades) => new() { Lotes = { L(1, "A", DateTime.Today.AddDays(30), unidades) } };
+
+        Assert.Equal(5, Medicamentos.UmbralBajoStock);
+        Assert.False(Con(0).BajoStock);                                   // agotado, no "bajo"
+        Assert.True(Con(1).BajoStock);
+        Assert.True(Con(Medicamentos.UmbralBajoStock).BajoStock);
+        Assert.False(Con(Medicamentos.UmbralBajoStock + 1).BajoStock);
+    }
+
+    [Fact]
     public void Medicamento_CalculaTotalesDesdeLotes()
     {
         var m = new Medicamentos

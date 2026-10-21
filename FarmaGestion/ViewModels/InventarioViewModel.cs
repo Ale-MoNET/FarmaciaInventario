@@ -38,8 +38,7 @@ public partial class InventarioViewModel : ObservableObject
 
     private readonly IBarcodeService _barcodeService;
 
-    // Umbrales de negocio (coinciden con el diseño).
-    private const int UmbralBajoStock = 15;
+    // Umbrales de negocio: el de bajo stock vive en el modelo (lo usan también las píldoras de color).
     private const int DiasPorVencer = Lote.DiasPorVencer;
 
     public InventarioViewModel(IMedicamentoRepository medicamentoRepo, IBarcodeService barcodeService)
@@ -93,7 +92,8 @@ public partial class InventarioViewModel : ObservableObject
     {
         var limitePorVencer = DateTime.Today.AddDays(DiasPorVencer);
         TotalProductos = lista.Count;
-        ConteoBajoStock = lista.Count(m => m.Existencias < UmbralBajoStock);
+        // Cuenta agotados y con pocas unidades (hasta el umbral): ambos requieren pedido.
+        ConteoBajoStock = lista.Count(m => m.Existencias <= Models.Medicamentos.UmbralBajoStock);
         // Se cuentan lotes con existencias que vencen en los próximos días (o ya vencieron).
         ConteoPorVencer = lista
             .SelectMany(m => m.Lotes)
