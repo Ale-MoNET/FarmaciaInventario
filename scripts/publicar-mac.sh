@@ -17,6 +17,8 @@ RID="osx-arm64"          # para Mac Intel usa: osx-x64
 PROJ="FarmaGestion/FarmaGestion.csproj"
 PUBDIR="FarmaGestion/bin/Release/net8.0/$RID/publish"
 APP="dist/mac/FarmaGestion.app"
+VERSION="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$PROJ" | head -1)"
+VERSION="${VERSION:-0.0.0}"
 
 echo "🔨 Publicando ($RID)…"
 "$DOTNET" publish "$PROJ" -c Release -r "$RID" --self-contained true \
@@ -32,7 +34,7 @@ cp -R "$PUBDIR/." "$APP/Contents/MacOS/"
 cp "FarmaGestion/Assets/FarmaGestion.icns" "$APP/Contents/Resources/FarmaGestion.icns"
 
 # Info.plist
-cat > "$APP/Contents/Info.plist" <<'PLIST'
+cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -43,8 +45,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundleIdentifier</key>      <string>com.farmagestion.app</string>
   <key>CFBundleIconFile</key>        <string>FarmaGestion</string>
   <key>CFBundlePackageType</key>     <string>APPL</string>
-  <key>CFBundleShortVersionString</key> <string>1.0.0</string>
-  <key>CFBundleVersion</key>         <string>1.0.0</string>
+  <key>CFBundleShortVersionString</key> <string>$VERSION</string>
+  <key>CFBundleVersion</key>         <string>$VERSION</string>
   <key>LSMinimumSystemVersion</key>  <string>11.0</string>
   <key>NSHighResolutionCapable</key> <true/>
 </dict>

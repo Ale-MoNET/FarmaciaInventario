@@ -28,12 +28,17 @@ public class DespachoRepository : IDespachoRepository
 
         try
         {
-            var despacho = new Despacho { Fecha = DateTime.Now, Total = 0m };
+            var ahora = DateTime.Now;
+            var hoy = ahora.Date;
+            var despacho = new Despacho { Fecha = ahora, Total = 0m };
             decimal total = 0m;
+            var advertencias = new List<string>();
 
             foreach (var linea in items)
             {
-                var producto = await context.Medicamentos.FindAsync(linea.MedicamentoId);
+                var producto = await context.Medicamentos
+                    .Include(m => m.Lotes)
+                    .FirstOrDefaultAsync(m => m.Id == linea.MedicamentoId);
 
                 if (producto == null)
                 {
@@ -42,8 +47,9 @@ public class DespachoRepository : IDespachoRepository
                         "❌ Uno de los productos ya no existe en el inventario.");
                 }
 
-                // Revalidamos las existencias en este instante (pudieron cambiar).
-                if (producto.Existencias < linea.Cantidad)
+                // Repartimos la cantidad entre los lotes (FEFO) con las existencias de este instante.
+                var asignacion = AsignadorLotes.Asignar(producto.Lotes, linea.Cantidad, hoy);
+                if (!asignacion.Completa)
                 {
                     await transaccion.RollbackAsync();
                     return new ResultadoDespacho(false,
@@ -51,15 +57,29 @@ public class DespachoRepository : IDespachoRepository
                         $"(disponibles: {producto.Existencias}, solicitados: {linea.Cantidad}).");
                 }
 
-                producto.Existencias -= linea.Cantidad;
-                total += producto.Precio * linea.Cantidad;
-
-                despacho.Detalles.Add(new DetalleDespacho
+                foreach (var parte in asignacion.Asignaciones)
                 {
-                    MedicamentoId = producto.Id,
-                    Cantidad = linea.Cantidad,
-                    PrecioHistorico = producto.Precio
-                });
+                    parte.Lote.Existencias -= parte.Cantidad;
+                    parte.Lote.FechaUltimaActualizacion = ahora;
+
+                    despacho.Detalles.Add(new DetalleDespacho
+                    {
+                        MedicamentoId = producto.Id,
+                        LoteId = parte.Lote.Id,
+                        Cantidad = parte.Cantidad,
+                        PrecioHistorico = producto.Precio
+                    });
+                }
+
+                if (asignacion.UnidadesVencidas > 0)
+                {
+                    advertencias.Add(
+                        $"⚠️ {asignacion.UnidadesVencidas} u de '{producto.Nombre}' salieron de lotes vencidos " +
+                        $"({string.Join(", ", asignacion.LotesVencidos)}).");
+                }
+
+                producto.FechaUltimaActualizacion = ahora;
+                total += producto.Precio * linea.Cantidad;
             }
 
             despacho.Total = total;
@@ -68,7 +88,10 @@ public class DespachoRepository : IDespachoRepository
             await transaccion.CommitAsync();
 
             LoggerService.Info($"Despacho #{despacho.Id} confirmado por un total de {despacho.Total:C}.");
-            return new ResultadoDespacho(true, "✅ Despacho confirmado correctamente.", despacho.Id);
+            return new ResultadoDespacho(true, "✅ Despacho confirmado correctamente.", despacho.Id)
+            {
+                Advertencias = advertencias
+            };
         }
         catch (Exception ex)
         {
@@ -86,26 +109,40 @@ public class DespachoRepository : IDespachoRepository
         var despacho = await context.Despachos
             .AsNoTracking()
             .Where(d => d.Id == despachoId)
-            .Select(d => new
-            {
-                d.Id,
-                d.Fecha,
-                d.Total,
-                Lineas = d.Detalles
-                    .OrderBy(x => x.Id)
-                    .Select(x => new LineaComprobante(
-                        x.Medicamento.CodigoBarras,
-                        x.Medicamento.Nombre,
-                        x.Cantidad,
-                        x.PrecioHistorico))
-                    .ToList()
-            })
+            .Select(d => new { d.Id, d.Fecha, d.Total })
             .FirstOrDefaultAsync();
 
         if (despacho == null)
             return null;
 
-        return new ComprobanteDespacho(despacho.Id, despacho.Fecha, despacho.Total, despacho.Lineas);
+        var detalles = await context.DetallesDespacho
+            .AsNoTracking()
+            .Where(x => x.DespachoId == despachoId)
+            .OrderBy(x => x.Id)
+            .Select(x => new
+            {
+                x.Id,
+                x.MedicamentoId,
+                x.Medicamento.CodigoBarras,
+                x.Medicamento.Nombre,
+                x.Cantidad,
+                x.PrecioHistorico
+            })
+            .ToListAsync();
+
+        // Un producto puede haber salido de varios lotes (un detalle por lote); en el
+        // comprobante se muestra una sola línea por producto.
+        var lineas = detalles
+            .GroupBy(x => new { x.MedicamentoId, x.PrecioHistorico })
+            .OrderBy(g => g.Min(x => x.Id))
+            .Select(g => new LineaComprobante(
+                g.First().CodigoBarras,
+                g.First().Nombre,
+                g.Sum(x => x.Cantidad),
+                g.Key.PrecioHistorico))
+            .ToList();
+
+        return new ComprobanteDespacho(despacho.Id, despacho.Fecha, despacho.Total, lineas);
     }
 
     public async Task<ReporteVentas> GenerarReporteAsync(DateTime inicio, DateTime fin)

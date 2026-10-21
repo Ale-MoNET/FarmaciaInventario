@@ -20,6 +20,19 @@ public partial class ItemCarrito : ObservableObject
     [NotifyPropertyChangedFor(nameof(SubtotalTexto))]
     private int _cantidad;
 
+    /// <summary>De qué lotes saldrán las unidades (regla FEFO), p. ej. "Sale de L01 (3) + L02 (2)".</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TieneDetalleLotes))]
+    private string _detalleLotes = string.Empty;
+
+    /// <summary>Aviso no bloqueante: la cantidad incluye unidades de lotes vencidos.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TieneAdvertencia))]
+    private string? _advertencia;
+
+    public bool TieneDetalleLotes => !string.IsNullOrEmpty(DetalleLotes);
+    public bool TieneAdvertencia => !string.IsNullOrEmpty(Advertencia);
+
     public decimal Subtotal => Medicamento.Precio * Cantidad;
     public string PrecioTexto => Medicamento.Precio.ToString("C");
     public string SubtotalTexto => Subtotal.ToString("C");
@@ -32,6 +45,18 @@ public partial class ItemCarrito : ObservableObject
     [RelayCommand] private void Incrementar() => OnIncrementar?.Invoke();
     [RelayCommand] private void Decrementar() => OnDecrementar?.Invoke();
     [RelayCommand] private void Quitar() => OnQuitar?.Invoke();
+
+    partial void OnCantidadChanged(int value) => ActualizarAsignacion();
+
+    /// <summary>Recalcula el reparto por lotes con las existencias conocidas del producto.</summary>
+    public void ActualizarAsignacion()
+    {
+        var reparto = AsignadorLotes.Asignar(Medicamento.Lotes, Cantidad, DateTime.Today);
+        DetalleLotes = reparto.Asignaciones.Count > 0 ? $"Sale de {reparto.Descripcion}" : string.Empty;
+        Advertencia = reparto.UnidadesVencidas > 0
+            ? $"Incluye {reparto.UnidadesVencidas} u de lotes vencidos ({string.Join(", ", reparto.LotesVencidos)})"
+            : null;
+    }
 }
 
 public partial class DespachoViewModel : ObservableObject
@@ -90,20 +115,52 @@ public partial class DespachoViewModel : ObservableObject
         var existente = Carritos.FirstOrDefault(i => i.Medicamento.Id == producto.Id);
         if (existente != null)
         {
-            if (existente.Cantidad < existente.Medicamento.Existencias)
+            // Refrescamos los lotes por si cambiaron desde que se agregó.
+            existente.Medicamento = producto;
+            if (existente.Cantidad < producto.Existencias)
+            {
                 existente.Cantidad++;
+            }
             else
+            {
+                existente.ActualizarAsignacion();
                 MostrarAlerta($"No hay más existencias de “{producto.Nombre}”.");
+            }
         }
         else
         {
             var item = new ItemCarrito { Medicamento = producto, Cantidad = 1 };
             ConectarItem(item);
             Carritos.Add(item);
+            AvisarSiHayVencidos(producto, item);
         }
 
         CodigoBusqueda = string.Empty;
         Recalcular();
+    }
+
+    /// <summary>
+    /// Política acordada: los lotes vencidos no bloquean la venta, solo se advierte.
+    /// Mientras haya lotes vigentes, las unidades salen de ellos y se recuerda dar de baja.
+    /// </summary>
+    private void AvisarSiHayVencidos(Medicamentos producto, ItemCarrito item)
+    {
+        if (producto.ExistenciasVencidas <= 0) return;
+
+        var lotesVencidos = string.Join(", ", producto.Lotes
+            .Where(l => l.Vencido && l.Existencias > 0)
+            .Select(l => l.NumeroLote));
+
+        if (item.TieneAdvertencia)
+        {
+            MostrarAlerta($"“{producto.Nombre}” solo tiene unidades vencidas (lote {lotesVencidos}). " +
+                          "Se despacharán con advertencia; revisa antes de confirmar.");
+        }
+        else
+        {
+            MostrarAlerta($"“{producto.Nombre}” tiene {producto.ExistenciasVencidas} u vencidas en el lote {lotesVencidos}. " +
+                          "No se despachan mientras haya vigentes; dales de baja en Inventario.");
+        }
     }
 
     [RelayCommand(CanExecute = nameof(PuedeConfirmar))]
@@ -121,7 +178,11 @@ public partial class DespachoViewModel : ObservableObject
             Carritos.Clear();
             CodigoBusqueda = string.Empty;
             Recalcular();
-            MostrarAlerta(resultado.Mensaje);
+
+            var mensaje = resultado.Advertencias.Count == 0
+                ? resultado.Mensaje
+                : resultado.Mensaje + " " + string.Join(" ", resultado.Advertencias);
+            MostrarAlerta(mensaje);
 
             await MostrarComprobanteAsync(resultado.DespachoId);
             return;
@@ -143,10 +204,9 @@ public partial class DespachoViewModel : ObservableObject
         try
         {
             var comprobante = await _despachoRepo.ObtenerComprobanteAsync(despachoId.Value);
-            if (comprobante == null)
+            if (comprobante is null)
             {
-                LoggerService.Advertencia(
-                    $"No se encontró el despacho #{despachoId} para armar el comprobante.");
+                LoggerService.Info($"El despacho #{despachoId} se guardó pero no se pudo recuperar para el comprobante.");
                 return;
             }
 

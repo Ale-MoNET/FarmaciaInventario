@@ -46,6 +46,9 @@ namespace FarmaGestion.Migrations
                     b.Property<int>("DespachoId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("LoteId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("MedicamentoId")
                         .HasColumnType("INTEGER");
 
@@ -56,9 +59,45 @@ namespace FarmaGestion.Migrations
 
                     b.HasIndex("DespachoId");
 
+                    b.HasIndex("LoteId");
+
                     b.HasIndex("MedicamentoId");
 
                     b.ToTable("DetallesDespacho");
+                });
+
+            modelBuilder.Entity("FarmaGestion.Models.Lote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Existencias")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("FechaIngreso")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("FechaUltimaActualizacion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaVencimiento")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MedicamentoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("NumeroLote")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MedicamentoId", "NumeroLote")
+                        .IsUnique();
+
+                    b.ToTable("Lotes");
                 });
 
             modelBuilder.Entity("FarmaGestion.Models.Medicamentos", b =>
@@ -69,22 +108,15 @@ namespace FarmaGestion.Migrations
 
                     b.Property<string>("CodigoBarras")
                         .IsRequired()
+                        .HasMaxLength(50)
                         .HasColumnType("TEXT");
-
-                    b.Property<int>("Existencias")
-                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("FechaUltimaActualizacion")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("FechaVencimiento")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Lote")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Nombre")
                         .IsRequired()
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<double>("Precio")
@@ -112,6 +144,7 @@ namespace FarmaGestion.Migrations
 
                     b.Property<string>("NombreUsuario")
                         .IsRequired()
+                        .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PasswordHash")
@@ -142,6 +175,11 @@ namespace FarmaGestion.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("FarmaGestion.Models.Lote", "Lote")
+                        .WithMany()
+                        .HasForeignKey("LoteId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("FarmaGestion.Models.Medicamentos", "Medicamento")
                         .WithMany()
                         .HasForeignKey("MedicamentoId")
@@ -150,12 +188,30 @@ namespace FarmaGestion.Migrations
 
                     b.Navigation("Despacho");
 
+                    b.Navigation("Lote");
+
+                    b.Navigation("Medicamento");
+                });
+
+            modelBuilder.Entity("FarmaGestion.Models.Lote", b =>
+                {
+                    b.HasOne("FarmaGestion.Models.Medicamentos", "Medicamento")
+                        .WithMany("Lotes")
+                        .HasForeignKey("MedicamentoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Medicamento");
                 });
 
             modelBuilder.Entity("FarmaGestion.Models.Despacho", b =>
                 {
                     b.Navigation("Detalles");
+                });
+
+            modelBuilder.Entity("FarmaGestion.Models.Medicamentos", b =>
+                {
+                    b.Navigation("Lotes");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,6 +12,12 @@ using FarmaGestion.Models;
 using FarmaGestion.Services;
 
 namespace FarmaGestion.ViewModels;
+
+/// <summary>Resultado de una importación CSV para mostrarlo al usuario.</summary>
+public record ResumenImportacion(int Importadas, IReadOnlyList<string> Rechazadas)
+{
+    public bool HuboRechazos => Rechazadas.Count > 0;
+}
 
 public partial class InventarioViewModel : ObservableObject
 {
@@ -33,7 +40,7 @@ public partial class InventarioViewModel : ObservableObject
 
     // Umbrales de negocio (coinciden con el diseño).
     private const int UmbralBajoStock = 15;
-    private const int DiasPorVencer = 90;
+    private const int DiasPorVencer = Lote.DiasPorVencer;
 
     public InventarioViewModel(IMedicamentoRepository medicamentoRepo, IBarcodeService barcodeService)
     {
@@ -82,12 +89,15 @@ public partial class InventarioViewModel : ObservableObject
         }
     }
 
-    private void RecalcularEstadisticas(System.Collections.Generic.List<Medicamentos> lista)
+    private void RecalcularEstadisticas(List<Medicamentos> lista)
     {
-        var limitePorVencer = DateTime.Now.AddDays(DiasPorVencer);
+        var limitePorVencer = DateTime.Today.AddDays(DiasPorVencer);
         TotalProductos = lista.Count;
         ConteoBajoStock = lista.Count(m => m.Existencias < UmbralBajoStock);
-        ConteoPorVencer = lista.Count(m => m.FechaVencimiento != null && m.FechaVencimiento <= limitePorVencer);
+        // Se cuentan lotes con existencias que vencen en los próximos días (o ya vencieron).
+        ConteoPorVencer = lista
+            .SelectMany(m => m.Lotes)
+            .Count(l => l.Existencias > 0 && l.FechaVencimiento != null && l.FechaVencimiento.Value.Date <= limitePorVencer);
         ValorInventario = lista.Sum(m => m.Precio * m.Existencias);
     }
 
@@ -111,36 +121,76 @@ public partial class InventarioViewModel : ObservableObject
         }
     }
 
-    public async Task ImportarCsvAsync(string rutaArchivo)
+    /// <summary>Deja un lote en cero existencias y recarga el inventario.</summary>
+    public async Task<bool> DarDeBajaLoteAsync(int loteId)
+    {
+        try
+        {
+            bool ok = await _medicamentoRepo.DarDeBajaLoteAsync(loteId);
+            if (ok) await CargarInventarioAsync();
+            return ok;
+        }
+        catch (Exception ex)
+        {
+            LoggerService.Error("Error al dar de baja el lote", ex);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Importa un CSV con el formato Codigo,Nombre,Precio,Existencias,Lote,Vencimiento.
+    /// Cada fila es un ingreso de lote; las filas incompletas se rechazan y se informan.
+    /// </summary>
+    public async Task<ResumenImportacion> ImportarCsvAsync(string rutaArchivo)
     {
         var registros = new List<RegistroMedicamentoCsv>();
+        var rechazadas = new List<string>();
 
         try
         {
             var lineas = await File.ReadAllLinesAsync(rutaArchivo);
 
-            // Skip(1) ignora la fila de encabezados: Codigo,Nombre,Precio,Existencias,Lote,Vencimiento
-            foreach (var linea in lineas.Skip(1))
+            // La fila 1 es el encabezado.
+            for (int i = 1; i < lineas.Length; i++)
             {
-                var columnas = linea.Split(',');
-                if (columnas.Length < 4) continue;
+                int fila = i + 1;
+                var linea = lineas[i];
+                if (string.IsNullOrWhiteSpace(linea)) continue;
 
-                string codigo = columnas[0].Trim();
-                if (string.IsNullOrWhiteSpace(codigo)) continue;
+                var col = linea.Split(',');
+                if (col.Length < 6)
+                {
+                    rechazadas.Add($"Fila {fila}: faltan columnas (se esperan Codigo,Nombre,Precio,Existencias,Lote,Vencimiento).");
+                    continue;
+                }
 
-                string nombre = columnas[1].Trim();
-                decimal precio = decimal.TryParse(columnas[2], out var p) ? p : 0;
-                int cantidad = int.TryParse(columnas[3], out var c) ? c : 0;
-                string? lote = columnas.Length > 4 ? columnas[4].Trim() : null;
-                DateTime? fechaVenc = null;
-                if (columnas.Length > 5 && DateTime.TryParse(columnas[5].Trim(), out var fv))
-                    fechaVenc = fv;
+                string codigo = col[0].Trim();
+                if (codigo.Length == 0) { rechazadas.Add($"Fila {fila}: sin código de barras."); continue; }
 
-                registros.Add(new RegistroMedicamentoCsv(codigo, nombre, precio, cantidad, lote, fechaVenc));
+                string nombre = col[1].Trim();
+                if (nombre.Length == 0) { rechazadas.Add($"Fila {fila}: sin nombre."); continue; }
+
+                if (!TryParsePrecio(col[2], out var precio) || precio < 0)
+                { rechazadas.Add($"Fila {fila}: precio inválido «{col[2].Trim()}»."); continue; }
+
+                if (!int.TryParse(col[3].Trim(), out var cantidad) || cantidad <= 0)
+                { rechazadas.Add($"Fila {fila}: cantidad inválida «{col[3].Trim()}» (debe ser mayor que 0)."); continue; }
+
+                string lote = col[4].Trim();
+                if (lote.Length == 0) { rechazadas.Add($"Fila {fila}: sin lote (es obligatorio)."); continue; }
+
+                if (!TryParseFecha(col[5], out var fecha))
+                { rechazadas.Add($"Fila {fila}: fecha de vencimiento inválida «{col[5].Trim()}» (usa AAAA-MM-DD)."); continue; }
+
+                registros.Add(new RegistroMedicamentoCsv(codigo, nombre, precio, cantidad, lote, fecha, fila));
             }
 
-            await _medicamentoRepo.ImportarRegistrosAsync(registros);
-            LoggerService.Info($"Importación de CSV completada ({registros.Count} filas) desde '{rutaArchivo}'.");
+            var resultado = await _medicamentoRepo.ImportarRegistrosAsync(registros);
+            rechazadas.AddRange(resultado.Rechazadas);
+
+            LoggerService.Info($"Importación de CSV completada: {resultado.Procesadas} filas aplicadas, " +
+                               $"{rechazadas.Count} rechazadas, desde '{rutaArchivo}'.");
+            return new ResumenImportacion(resultado.Procesadas, rechazadas);
         }
         catch (Exception ex)
         {
@@ -148,6 +198,25 @@ public partial class InventarioViewModel : ObservableObject
             throw new InvalidOperationException(
                 "No se pudo importar el archivo CSV. Revisa el formato e inténtalo de nuevo.", ex);
         }
+    }
+
+    private static bool TryParsePrecio(string texto, out decimal valor)
+    {
+        var s = texto.Trim();
+        // Acepta "15.50" y "15,50"; no acepta separadores de miles.
+        if (s.Contains(',') && !s.Contains('.')) s = s.Replace(',', '.');
+        return decimal.TryParse(s, NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign,
+            CultureInfo.InvariantCulture, out valor);
+    }
+
+    private static readonly string[] FormatosFecha =
+        { "yyyy-MM-dd", "dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "yyyy/MM/dd" };
+
+    private static bool TryParseFecha(string texto, out DateTime fecha)
+    {
+        var s = texto.Trim();
+        return DateTime.TryParseExact(s, FormatosFecha, CultureInfo.InvariantCulture, DateTimeStyles.None, out fecha)
+               || DateTime.TryParse(s, CultureInfo.CurrentCulture, DateTimeStyles.None, out fecha);
     }
 
     private void AplicarFiltro(string termino)

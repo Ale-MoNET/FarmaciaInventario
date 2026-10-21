@@ -40,6 +40,7 @@ public static class ServiceConfiguration
         services.AddTransient<ReportesViewModel>();
         services.AddTransient<UsuariosViewModel>();
         services.AddTransient<ProductoViewModel>();
+        services.AddTransient<IngresoMercaderiaViewModel>();
         services.AddTransient<UsuarioFormViewModel>();
 
         return services.BuildServiceProvider();

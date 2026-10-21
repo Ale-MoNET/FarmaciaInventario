@@ -8,20 +8,31 @@ namespace FarmaGestion.Services;
 /// se guardan en la carpeta de datos del usuario (Application Support en macOS,
 /// AppData en Windows) en lugar del directorio de trabajo, de modo que la app
 /// funcione igual sin importar desde dónde se ejecute (instalador, acceso directo, etc.).
+/// La variable de entorno FARMAGESTION_DATA_DIR permite usar otra carpeta (pruebas, demos).
 /// </summary>
 public static class AppPaths
 {
     private const string CarpetaApp = "FarmaGestion";
+    public const string VariableCarpetaDatos = "FARMAGESTION_DATA_DIR";
 
     /// <summary>Carpeta base de datos de la aplicación; se crea si no existe.</summary>
     public static string CarpetaDatos
     {
         get
         {
-            var baseDir = Environment.GetFolderPath(
-                Environment.SpecialFolder.ApplicationData,
-                Environment.SpecialFolderOption.Create);
-            var dir = Path.Combine(baseDir, CarpetaApp);
+            var personalizada = Environment.GetEnvironmentVariable(VariableCarpetaDatos);
+            string dir;
+            if (!string.IsNullOrWhiteSpace(personalizada))
+            {
+                dir = personalizada;
+            }
+            else
+            {
+                var baseDir = Environment.GetFolderPath(
+                    Environment.SpecialFolder.ApplicationData,
+                    Environment.SpecialFolderOption.Create);
+                dir = Path.Combine(baseDir, CarpetaApp);
+            }
             Directory.CreateDirectory(dir);
             return dir;
         }

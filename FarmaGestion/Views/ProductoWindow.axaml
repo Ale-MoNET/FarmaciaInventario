@@ -5,7 +5,7 @@
         x:DataType="vm:ProductoViewModel"
         Title="Registrar Nuevo Medicamento"
         Icon="/Assets/farma-icon.png"
-        Width="460" Height="620"
+        Width="460" SizeToContent="Height" MaxHeight="780"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         Background="#0A0D13">
@@ -57,29 +57,44 @@
                 <TextBox Classes="field" Text="{Binding Nombre}" PlaceholderText="Ej. Paracetamol 500mg"/>
             </StackPanel>
 
-            <Grid ColumnDefinitions="*, 16, *">
-                <StackPanel Grid.Column="0" Spacing="7">
-                    <TextBlock Text="PRECIO UNITARIO (Q)" Classes="label"/>
-                    <TextBox Classes="field" Text="{Binding Precio}"/>
-                </StackPanel>
-                <StackPanel Grid.Column="2" Spacing="7">
-                    <TextBlock Text="EXISTENCIAS INICIALES" Classes="label"/>
-                    <TextBox Classes="field" Text="{Binding Existencias}"/>
-                </StackPanel>
-            </Grid>
+            <StackPanel Spacing="7">
+                <TextBlock Text="PRECIO UNITARIO (Q)" Classes="label"/>
+                <TextBox Classes="field" Text="{Binding Precio}"/>
+            </StackPanel>
 
-            <Grid ColumnDefinitions="*, 16, *">
-                <StackPanel Grid.Column="0" Spacing="7">
-                    <TextBlock Text="LOTE" Classes="label"/>
-                    <TextBox Classes="field" Text="{Binding Lote}" PlaceholderText="Ej. L-1042"/>
+            <!-- Primer lote: solo al crear. Después las existencias entran por "Ingresar mercadería". -->
+            <Border IsVisible="{Binding MostrarPrimerLote}" Background="#07FFFFFF" BorderBrush="#12FFFFFF"
+                    BorderThickness="1" CornerRadius="12" Padding="14">
+                <StackPanel Spacing="14">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="EXISTENCIAS INICIALES (PRIMER LOTE)" Classes="label"/>
+                        <TextBlock Text="Opcional: deja todo vacío para crear el producto sin existencias."
+                                   FontSize="11.5" Foreground="#8B96A4" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <Grid ColumnDefinitions="*, 16, *">
+                        <StackPanel Grid.Column="0" Spacing="7">
+                            <TextBlock Text="LOTE" Classes="label"/>
+                            <TextBox Classes="field" Text="{Binding Lote}" PlaceholderText="Ej. L-1042"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="7">
+                            <TextBlock Text="CANTIDAD" Classes="label"/>
+                            <TextBox Classes="field" Text="{Binding Existencias}"/>
+                        </StackPanel>
+                    </Grid>
+                    <StackPanel Spacing="7">
+                        <TextBlock Text="FECHA DE VENCIMIENTO" Classes="label"/>
+                        <CalendarDatePicker SelectedDate="{Binding FechaVencimiento}"
+                                            HorizontalAlignment="Stretch" FontSize="15"
+                                            PlaceholderText="dd/mm/aaaa"/>
+                    </StackPanel>
                 </StackPanel>
-                <StackPanel Grid.Column="2" Spacing="7">
-                    <TextBlock Text="FECHA VENCIMIENTO" Classes="label"/>
-                    <CalendarDatePicker SelectedDate="{Binding FechaVencimiento}"
-                                        HorizontalAlignment="Stretch" FontSize="15"
-                                        Watermark="dd/mm/aaaa"/>
-                </StackPanel>
-            </Grid>
+            </Border>
+
+            <Border IsVisible="{Binding EsEdicion}" Background="#07FFFFFF" BorderBrush="#12FFFFFF"
+                    BorderThickness="1" CornerRadius="12" Padding="14">
+                <TextBlock FontSize="12" Foreground="#8B96A4" TextWrapping="Wrap"
+                           Text="Las existencias se manejan por lote desde Inventario: «Ingresar mercadería» para sumar unidades y «Dar de baja» para retirar un lote."/>
+            </Border>
 
             <!-- Mensaje de error de validación -->
             <Border Background="#24FF6B6B" BorderBrush="#40FF6B6B" BorderThickness="1"
