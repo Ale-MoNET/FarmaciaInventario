@@ -121,22 +121,6 @@ public partial class InventarioViewModel : ObservableObject
         }
     }
 
-    /// <summary>Deja un lote en cero existencias y recarga el inventario.</summary>
-    public async Task<bool> DarDeBajaLoteAsync(int loteId)
-    {
-        try
-        {
-            bool ok = await _medicamentoRepo.DarDeBajaLoteAsync(loteId);
-            if (ok) await CargarInventarioAsync();
-            return ok;
-        }
-        catch (Exception ex)
-        {
-            LoggerService.Error("Error al dar de baja el lote", ex);
-            return false;
-        }
-    }
-
     /// <summary>
     /// Importa un CSV con el formato Codigo,Nombre,Precio,Existencias,Lote,Vencimiento.
     /// Cada fila es un ingreso de lote; las filas incompletas se rechazan y se informan.

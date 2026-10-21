@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,16 +12,38 @@ using FarmaGestion.Services;
 
 namespace FarmaGestion.ViewModels;
 
+/// <summary>Opción del selector de lote en caja: automático (FEFO) o un lote concreto.</summary>
+public sealed class OpcionLote
+{
+    public int? LoteId { get; init; }
+    public Lote? Lote { get; init; }
+    public string Texto { get; init; } = string.Empty;
+}
+
 public partial class ItemCarrito : ObservableObject
 {
-    public Medicamentos Medicamento { get; set; } = null!;
+    private Medicamentos _medicamento = null!;
+
+    /// <summary>
+    /// Producto con sus lotes. Al reasignarlo (p. ej. tras volver a escanearlo) se refrescan
+    /// las opciones de lote conservando la elección si el lote sigue disponible.
+    /// </summary>
+    public Medicamentos Medicamento
+    {
+        get => _medicamento;
+        set
+        {
+            _medicamento = value;
+            ReconstruirOpcionesLote();
+        }
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Subtotal))]
     [NotifyPropertyChangedFor(nameof(SubtotalTexto))]
     private int _cantidad;
 
-    /// <summary>De qué lotes saldrán las unidades (regla FEFO), p. ej. "Sale de L01 (3) + L02 (2)".</summary>
+    /// <summary>De qué lotes saldrán las unidades, p. ej. "Sale de L01 (3) + L02 (2)".</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TieneDetalleLotes))]
     private string _detalleLotes = string.Empty;
@@ -30,8 +53,21 @@ public partial class ItemCarrito : ObservableObject
     [NotifyPropertyChangedFor(nameof(TieneAdvertencia))]
     private string? _advertencia;
 
+    /// <summary>Opciones del selector: la primera es "automático"; luego cada lote con existencias.</summary>
+    public ObservableCollection<OpcionLote> OpcionesLote { get; } = new();
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Disponible))]
+    private OpcionLote? _opcionLoteSeleccionada;
+
+    /// <summary>El selector solo se muestra cuando hay más de un lote entre los que elegir.</summary>
+    [ObservableProperty] private bool _mostrarSelectorLote;
+
     public bool TieneDetalleLotes => !string.IsNullOrEmpty(DetalleLotes);
     public bool TieneAdvertencia => !string.IsNullOrEmpty(Advertencia);
+
+    /// <summary>Unidades vendibles: las del lote elegido, o todas las del producto en automático.</summary>
+    public int Disponible => OpcionLoteSeleccionada?.Lote?.Existencias ?? Medicamento.Existencias;
 
     public decimal Subtotal => Medicamento.Precio * Cantidad;
     public string PrecioTexto => Medicamento.Precio.ToString("C");
@@ -41,18 +77,63 @@ public partial class ItemCarrito : ObservableObject
     public Action? OnIncrementar;
     public Action? OnDecrementar;
     public Action? OnQuitar;
+    public Action? OnSeleccionLoteCambiada;
+    public Action? OnCantidadCambiada;
 
     [RelayCommand] private void Incrementar() => OnIncrementar?.Invoke();
     [RelayCommand] private void Decrementar() => OnDecrementar?.Invoke();
     [RelayCommand] private void Quitar() => OnQuitar?.Invoke();
 
-    partial void OnCantidadChanged(int value) => ActualizarAsignacion();
+    partial void OnCantidadChanged(int value)
+    {
+        ActualizarAsignacion();
+        OnCantidadCambiada?.Invoke();
+    }
+
+    partial void OnOpcionLoteSeleccionadaChanged(OpcionLote? value)
+    {
+        if (_medicamento is null) return;
+        // Al elegir un lote concreto, la cantidad no puede superar lo que ese lote tiene.
+        if (Cantidad > Disponible && Disponible > 0) Cantidad = Disponible;
+        ActualizarAsignacion();
+        OnSeleccionLoteCambiada?.Invoke();
+    }
+
+    private void ReconstruirOpcionesLote()
+    {
+        int? previo = OpcionLoteSeleccionada?.LoteId;
+
+        OpcionesLote.Clear();
+        OpcionesLote.Add(new OpcionLote { Texto = "Automático · sale primero el que vence antes" });
+        foreach (var lote in _medicamento.LotesActivos)
+        {
+            string fecha = lote.FechaVencimiento?.ToString("dd/MM/yyyy") ?? "sin fecha";
+            string estado = lote.Vencido ? " · VENCIDO" : string.Empty;
+            OpcionesLote.Add(new OpcionLote
+            {
+                LoteId = lote.Id,
+                Lote = lote,
+                Texto = $"Lote {lote.NumeroLote} · vence {fecha} · {lote.Existencias} u{estado}"
+            });
+        }
+
+        MostrarSelectorLote = _medicamento.NumeroLotes > 1;
+        OpcionLoteSeleccionada = (previo != null ? OpcionesLote.FirstOrDefault(o => o.LoteId == previo) : null)
+                                 ?? OpcionesLote[0];
+    }
 
     /// <summary>Recalcula el reparto por lotes con las existencias conocidas del producto.</summary>
     public void ActualizarAsignacion()
     {
-        var reparto = AsignadorLotes.Asignar(Medicamento.Lotes, Cantidad, DateTime.Today);
-        DetalleLotes = reparto.Asignaciones.Count > 0 ? $"Sale de {reparto.Descripcion}" : string.Empty;
+        if (_medicamento is null) return;
+
+        bool manual = OpcionLoteSeleccionada?.Lote is not null;
+        IEnumerable<Lote> lotes = manual ? new[] { OpcionLoteSeleccionada!.Lote! } : _medicamento.Lotes;
+
+        var reparto = AsignadorLotes.Asignar(lotes, Cantidad, DateTime.Today);
+        DetalleLotes = reparto.Asignaciones.Count == 0
+            ? string.Empty
+            : manual ? $"Lote elegido: {reparto.Descripcion}" : $"Sale de {reparto.Descripcion}";
         Advertencia = reparto.UnidadesVencidas > 0
             ? $"Incluye {reparto.UnidadesVencidas} u de lotes vencidos ({string.Join(", ", reparto.LotesVencidos)})"
             : null;
@@ -117,14 +198,16 @@ public partial class DespachoViewModel : ObservableObject
         {
             // Refrescamos los lotes por si cambiaron desde que se agregó.
             existente.Medicamento = producto;
-            if (existente.Cantidad < producto.Existencias)
+            if (existente.Cantidad < existente.Disponible)
             {
                 existente.Cantidad++;
             }
             else
             {
                 existente.ActualizarAsignacion();
-                MostrarAlerta($"No hay más existencias de “{producto.Nombre}”.");
+                MostrarAlerta(existente.OpcionLoteSeleccionada?.Lote is { } loteElegido
+                    ? $"El lote {loteElegido.NumeroLote} de “{producto.Nombre}” no tiene más unidades; elige otro lote o el modo automático."
+                    : $"No hay más existencias de “{producto.Nombre}”.");
             }
         }
         else
@@ -169,7 +252,7 @@ public partial class DespachoViewModel : ObservableObject
         HayAlerta = false;
         MensajeAlerta = string.Empty;
 
-        var lineas = Carritos.Select(i => new LineaDespacho(i.Medicamento.Id, i.Cantidad));
+        var lineas = Carritos.Select(i => new LineaDespacho(i.Medicamento.Id, i.Cantidad, i.OpcionLoteSeleccionada?.LoteId));
         var resultado = await _despachoRepo.ConfirmarAsync(lineas);
 
         if (resultado.Exito)
@@ -225,16 +308,20 @@ public partial class DespachoViewModel : ObservableObject
     {
         item.OnIncrementar = () =>
         {
-            if (item.Cantidad < item.Medicamento.Existencias)
+            if (item.Cantidad < item.Disponible)
             {
                 item.Cantidad++;
                 Recalcular();
             }
             else
             {
-                MostrarAlerta($"No hay más existencias de “{item.Medicamento.Nombre}”.");
+                MostrarAlerta(item.OpcionLoteSeleccionada?.Lote is { } loteElegido
+                    ? $"El lote {loteElegido.NumeroLote} de “{item.Medicamento.Nombre}” no tiene más unidades; elige otro lote o el modo automático."
+                    : $"No hay más existencias de “{item.Medicamento.Nombre}”.");
             }
         };
+        item.OnSeleccionLoteCambiada = Recalcular;
+        item.OnCantidadCambiada = Recalcular;
         item.OnDecrementar = () =>
         {
             item.Cantidad--;

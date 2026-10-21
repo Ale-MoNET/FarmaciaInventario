@@ -10,6 +10,7 @@ public class InventarioContext : DbContext
 {
     public DbSet<Medicamentos> Medicamentos { get; set; }
     public DbSet<Lote> Lotes { get; set; }
+    public DbSet<BajaLote> BajasLote { get; set; }
     public DbSet<Despacho> Despachos { get; set; }
     public DbSet<DetalleDespacho> DetallesDespacho { get; set; }
     public DbSet<Usuario> Usuarios { get; set; }
@@ -86,5 +87,14 @@ public class InventarioContext : DbContext
             .WithMany()
             .HasForeignKey(d => d.LoteId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // 6. Bajas de lote: se eliminan junto con el producto (que solo puede borrarse si
+        //    nunca tuvo ventas); se consultan por fecha para el reporte.
+        modelBuilder.Entity<BajaLote>(baja =>
+        {
+            baja.HasIndex(b => b.Fecha);
+            baja.HasOne(b => b.Lote).WithMany().HasForeignKey(b => b.LoteId).OnDelete(DeleteBehavior.Cascade);
+            baja.HasOne(b => b.Medicamento).WithMany().HasForeignKey(b => b.MedicamentoId).OnDelete(DeleteBehavior.Cascade);
+        });
     }   
 }

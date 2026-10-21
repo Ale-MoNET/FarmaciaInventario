@@ -176,7 +176,7 @@ public class DespachoRepositoryTests
     }
 
     [Fact]
-    public async Task ObtenerComprobante_AgrupaEnUnaLineaAunqueSalgaDeVariosLotes()
+    public async Task ObtenerComprobante_UnaLineaPorLoteConSuNumero()
     {
         using var factory = new TestDbContextFactory();
         var repo = new DespachoRepository(factory);
@@ -189,11 +189,61 @@ public class DespachoRepositoryTests
         var resultado = await repo.ConfirmarAsync(new[] { new LineaDespacho(id, 4), new LineaDespacho(otro, 1) });
         var comprobante = await repo.ObtenerComprobanteAsync(resultado.DespachoId!.Value);
 
-        Assert.Equal(2, comprobante!.Lineas.Count);          // una línea por producto, no por lote
-        Assert.Equal(("MULTI", 4, 12m), (comprobante.Lineas[0].Codigo, comprobante.Lineas[0].Cantidad, comprobante.Lineas[0].Subtotal));
-        Assert.Equal(("OTRO", 1), (comprobante.Lineas[1].Codigo, comprobante.Lineas[1].Cantidad));
+        Assert.Equal(4, comprobante!.Lineas.Count);          // tres lotes de MULTI + OTRO
+        Assert.Equal(new[] { "L1", "L2", "L3", "L1" }, comprobante.Lineas.Select(l => l.Lote).ToArray());
+        Assert.Equal(new[] { 1, 1, 2, 1 }, comprobante.Lineas.Select(l => l.Cantidad).ToArray());
+        Assert.All(comprobante.Lineas.Take(3), l => Assert.Equal("MULTI", l.Codigo));
         Assert.Equal(5, comprobante.Unidades);
         Assert.Equal(13m, comprobante.Total);
+    }
+
+    [Fact]
+    public async Task Confirmar_ConLoteElegido_DescuentaSoloDeEseLote()
+    {
+        using var factory = new TestDbContextFactory();
+        var repo = new DespachoRepository(factory);
+        var id = await SembrarAsync(factory, "MANUAL", 2m,
+            ("CERCANO", Hoy.AddDays(30), 5),
+            ("LEJANO", Hoy.AddDays(300), 5));
+
+        int lejanoId;
+        await using (var ctx = await factory.CreateDbContextAsync())
+            lejanoId = (await ctx.Lotes.SingleAsync(l => l.NumeroLote == "LEJANO")).Id;
+
+        var resultado = await repo.ConfirmarAsync(new[] { new LineaDespacho(id, 3, lejanoId) });
+
+        Assert.True(resultado.Exito);
+        await using var verif = await factory.CreateDbContextAsync();
+        var lotes = await verif.Lotes.Where(l => l.MedicamentoId == id).ToDictionaryAsync(l => l.NumeroLote);
+        Assert.Equal(5, lotes["CERCANO"].Existencias);       // intacto aunque venza antes
+        Assert.Equal(2, lotes["LEJANO"].Existencias);
+        var detalle = Assert.Single(verif.DetallesDespacho);
+        Assert.Equal(lejanoId, detalle.LoteId);
+    }
+
+    [Fact]
+    public async Task Confirmar_ConLoteElegidoSinStockOInexistente_NoDespacha()
+    {
+        using var factory = new TestDbContextFactory();
+        var repo = new DespachoRepository(factory);
+        var id = await SembrarAsync(factory, "MANUAL2", 2m,
+            ("CHICO", Hoy.AddDays(30), 1),
+            ("GRANDE", Hoy.AddDays(60), 50));
+
+        int chicoId;
+        await using (var ctx = await factory.CreateDbContextAsync())
+            chicoId = (await ctx.Lotes.SingleAsync(l => l.NumeroLote == "CHICO")).Id;
+
+        var insuficiente = await repo.ConfirmarAsync(new[] { new LineaDespacho(id, 2, chicoId) });
+        Assert.False(insuficiente.Exito);
+        Assert.Contains("CHICO", insuficiente.Mensaje);     // no toma del otro lote por su cuenta
+
+        var inexistente = await repo.ConfirmarAsync(new[] { new LineaDespacho(id, 1, 9999) });
+        Assert.False(inexistente.Exito);
+
+        await using var verif = await factory.CreateDbContextAsync();
+        Assert.Equal(51, await verif.Lotes.Where(l => l.MedicamentoId == id).SumAsync(l => l.Existencias));
+        Assert.Empty(verif.Despachos);
     }
 
     [Fact]

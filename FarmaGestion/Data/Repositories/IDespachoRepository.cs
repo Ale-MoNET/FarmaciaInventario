@@ -5,8 +5,11 @@ using System.Threading.Tasks;
 
 namespace FarmaGestion.Data.Repositories;
 
-/// <summary>Una línea solicitada para el despacho.</summary>
-public record LineaDespacho(int MedicamentoId, int Cantidad);
+/// <summary>
+/// Una línea solicitada para el despacho. <paramref name="LoteId"/> fuerza un lote concreto;
+/// si es nulo, las unidades salen por regla FEFO.
+/// </summary>
+public record LineaDespacho(int MedicamentoId, int Cantidad, int? LoteId = null);
 
 /// <summary>Resultado de confirmar un despacho.</summary>
 public record ResultadoDespacho(bool Exito, string Mensaje, int? DespachoId = null)
@@ -15,8 +18,11 @@ public record ResultadoDespacho(bool Exito, string Mensaje, int? DespachoId = nu
     public IReadOnlyList<string> Advertencias { get; init; } = Array.Empty<string>();
 }
 
-/// <summary>Una línea del comprobante, con el precio al que realmente se vendió.</summary>
-public record LineaComprobante(string Codigo, string Nombre, int Cantidad, decimal PrecioUnitario)
+/// <summary>
+/// Una línea del comprobante, con el precio al que realmente se vendió y el lote del que
+/// salió (nulo en despachos anteriores a la versión 1.1).
+/// </summary>
+public record LineaComprobante(string Codigo, string Nombre, int Cantidad, decimal PrecioUnitario, string? Lote = null)
 {
     public decimal Subtotal => PrecioUnitario * Cantidad;
 }
@@ -66,7 +72,7 @@ public interface IDespachoRepository
 
     /// <summary>
     /// Recupera un despacho ya registrado con el detalle de sus líneas para armar el
-    /// comprobante (una línea por producto). Devuelve null si el despacho no existe.
+    /// comprobante (una línea por producto y lote). Devuelve null si el despacho no existe.
     /// </summary>
     Task<ComprobanteDespacho?> ObtenerComprobanteAsync(int despachoId);
 

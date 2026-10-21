@@ -124,7 +124,7 @@ public class MedicamentoRepositoryTests
     }
 
     [Fact]
-    public async Task DarDeBajaLote_DejaElLoteEnCero()
+    public async Task DarDeBajaLote_ParcialOTotal_RegistraLaBajaConMotivo()
     {
         var (repo, factory) = Crear();
         using (factory)
@@ -133,12 +133,93 @@ public class MedicamentoRepositoryTests
             var m = await repo.ObtenerPorCodigoAsync("300");
             var loteId = m!.Lotes.Single().Id;
 
-            Assert.True(await repo.DarDeBajaLoteAsync(loteId));
-            Assert.False(await repo.DarDeBajaLoteAsync(9999));
+            var parcial = await repo.DarDeBajaLoteAsync(loteId, 4, "Dañado", "caja golpeada", "admin");
+            Assert.True(parcial.Exito);
+
+            var total = await repo.DarDeBajaLoteAsync(loteId, 5, "Vencido", null, "kirenia");
+            Assert.True(total.Exito);
 
             var despues = await repo.ObtenerPorIdAsync(m.Id);
             Assert.Equal(0, despues!.Existencias);
             Assert.Equal(0, despues.NumeroLotes);             // ya no cuenta como lote activo
+
+            var bajas = await repo.ObtenerBajasRecientesAsync();
+            Assert.Equal(2, bajas.Count);
+            Assert.Equal("Vencido", bajas[0].Motivo);          // la más reciente primero
+            Assert.Equal("kirenia", bajas[0].Usuario);
+            Assert.Equal(4, bajas[1].Cantidad);
+            Assert.Equal("caja golpeada", bajas[1].Observacion);
+            Assert.Equal("V1", bajas[1].Lote.NumeroLote);
+            Assert.Equal("Omeprazol", bajas[1].Medicamento.Nombre);
+        }
+    }
+
+    [Fact]
+    public async Task DarDeBajaLote_ValidaCantidadMotivoYExistencia()
+    {
+        var (repo, factory) = Crear();
+        using (factory)
+        {
+            await repo.AgregarAsync(Producto("301", "Ranitidina", 2m, lote: "R1", cantidad: 3));
+            var loteId = (await repo.ObtenerPorCodigoAsync("301"))!.Lotes.Single().Id;
+
+            Assert.False((await repo.DarDeBajaLoteAsync(loteId, 0, "Vencido", null, "admin")).Exito);
+            Assert.False((await repo.DarDeBajaLoteAsync(loteId, 2, " ", null, "admin")).Exito);
+            Assert.False((await repo.DarDeBajaLoteAsync(loteId, 4, "Vencido", null, "admin")).Exito);   // más de lo que hay
+            Assert.False((await repo.DarDeBajaLoteAsync(9999, 1, "Vencido", null, "admin")).Exito);
+
+            Assert.Equal(3, (await repo.ObtenerPorCodigoAsync("301"))!.Existencias);  // nada cambió
+            Assert.Empty(await repo.ObtenerBajasRecientesAsync());
+        }
+    }
+
+    [Fact]
+    public async Task ActualizarLote_CambiaNumeroYFecha_YRechazaDuplicados()
+    {
+        var (repo, factory) = Crear();
+        using (factory)
+        {
+            await repo.AgregarAsync(Producto("400", "Metformina", 3m, lote: "INICIAL", cantidad: 10));
+            var id = (await repo.ObtenerPorCodigoAsync("400"))!.Id;
+            await repo.IngresarLoteAsync(id, "M-2", EnUnAnio, 5);
+
+            var m = await repo.ObtenerPorIdAsync(id);
+            var inicial = m!.Lotes.Single(l => l.NumeroLote == "INICIAL");
+
+            var nuevaFecha = EnUnAnio.AddMonths(6);
+            var ok = await repo.ActualizarLoteAsync(inicial.Id, " m-1 ", nuevaFecha);
+            Assert.True(ok.Exito);
+
+            var duplicado = await repo.ActualizarLoteAsync(inicial.Id, "M-2", nuevaFecha);
+            Assert.False(duplicado.Exito);
+            Assert.Contains("ya tiene otro lote", duplicado.Mensaje);
+
+            var vacio = await repo.ActualizarLoteAsync(inicial.Id, "  ", nuevaFecha);
+            Assert.False(vacio.Exito);
+
+            var corregido = (await repo.ObtenerPorIdAsync(id))!.Lotes.Single(l => l.Id == inicial.Id);
+            Assert.Equal("M-1", corregido.NumeroLote);
+            Assert.Equal(nuevaFecha.Date, corregido.FechaVencimiento);
+            Assert.Equal(10, corregido.Existencias);           // las existencias no se tocan
+        }
+    }
+
+    [Fact]
+    public async Task ObtenerLotesConExistencias_TraeProductoYOrdenaPorVencimiento()
+    {
+        var (repo, factory) = Crear();
+        using (factory)
+        {
+            await repo.AgregarAsync(Producto("500", "Zinc", 1m, lote: "LEJANO", cantidad: 1));
+            var id = (await repo.ObtenerPorCodigoAsync("500"))!.Id;
+            await repo.IngresarLoteAsync(id, "CERCANO", DateTime.Today.AddDays(10), 2);
+            await repo.AgregarAsync(Producto("501", "Vacio", 1m));                        // sin lotes
+
+            var lotes = await repo.ObtenerLotesConExistenciasAsync();
+
+            Assert.Equal(2, lotes.Count);
+            Assert.Equal("CERCANO", lotes[0].NumeroLote);
+            Assert.Equal("Zinc", lotes[0].Medicamento.Nombre);
         }
     }
 

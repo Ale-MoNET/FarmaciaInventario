@@ -323,12 +323,19 @@
                                                         <TextBlock Text="{Binding EstadoTexto}" FontSize="11" FontWeight="SemiBold"
                                                                    Foreground="{Binding Estado, Converter={StaticResource EstadoLoteColor}, ConverterParameter=fg}"/>
                                                     </Border>
-                                                    <Button Grid.Column="4" Content="Dar de baja" Click="BtnDarDeBajaLote_Click"
-                                                            HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                            FontSize="11.5" Padding="10,4" CornerRadius="8"
-                                                            Background="#08FFFFFF" Foreground="#FF8B8B"
-                                                            BorderBrush="#2EFF6B6B" BorderThickness="1"
-                                                            ToolTip.Tip="Retira todas las unidades de este lote (vencido, dañado…)"/>
+                                                    <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8"
+                                                                HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                        <Button Content="Editar" Click="BtnEditarLote_Click"
+                                                                FontSize="11.5" Padding="10,4" CornerRadius="8"
+                                                                Background="#08FFFFFF" Foreground="#C2CCD6"
+                                                                BorderBrush="#1FFFFFFF" BorderThickness="1"
+                                                                ToolTip.Tip="Corregir el número de lote o la fecha de vencimiento"/>
+                                                        <Button Content="Dar de baja" Click="BtnDarDeBajaLote_Click"
+                                                                FontSize="11.5" Padding="10,4" CornerRadius="8"
+                                                                Background="#08FFFFFF" Foreground="#FF8B8B"
+                                                                BorderBrush="#2EFF6B6B" BorderThickness="1"
+                                                                ToolTip.Tip="Retira unidades de este lote con su motivo (vencido, dañado…)"/>
+                                                    </StackPanel>
                                                 </Grid>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>

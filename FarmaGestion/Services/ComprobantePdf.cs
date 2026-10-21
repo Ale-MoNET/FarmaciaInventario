@@ -140,8 +140,20 @@ public static class ComprobantePdf
 
         doc.Texto(PdfDocumento.Recortar(linea.Codigo, AnchoCodigo - 8, 9), XCodigo + 8, y + 6, 9,
             negrita: false, ColorSuave);
-        doc.Texto(PdfDocumento.Recortar(linea.Nombre, AnchoProducto, 10), XProducto, y + 5.5, 10,
-            negrita: false, ColorTexto);
+        if (!string.IsNullOrWhiteSpace(linea.Lote))
+        {
+            // El lote va en gris a la derecha del nombre, para la trazabilidad de la venta.
+            string textoLote = $"Lote {linea.Lote}";
+            double anchoLote = PdfDocumento.AnchoTexto(textoLote, 8);
+            doc.Texto(PdfDocumento.Recortar(linea.Nombre, AnchoProducto - anchoLote - 8, 10), XProducto, y + 5.5, 10,
+                negrita: false, ColorTexto);
+            doc.TextoDerecha(textoLote, XProducto + AnchoProducto, y + 7, 8, negrita: false, ColorTenue);
+        }
+        else
+        {
+            doc.Texto(PdfDocumento.Recortar(linea.Nombre, AnchoProducto, 10), XProducto, y + 5.5, 10,
+                negrita: false, ColorTexto);
+        }
         doc.TextoDerecha(linea.Cantidad.ToString(CultureInfo.CurrentCulture), XCantidad, y + 5.5, 10,
             negrita: false, ColorTexto);
         doc.TextoDerecha(Moneda(linea.PrecioUnitario), XPrecio, y + 5.5, 10, negrita: false, ColorSuave);

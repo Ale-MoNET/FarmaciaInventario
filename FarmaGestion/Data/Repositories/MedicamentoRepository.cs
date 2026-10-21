@@ -102,21 +102,97 @@ public class MedicamentoRepository : IMedicamentoRepository
         return new ResultadoIngreso(true, mensaje, nuevo);
     }
 
-    public async Task<bool> DarDeBajaLoteAsync(int loteId)
+    public async Task<ResultadoOperacion> DarDeBajaLoteAsync(int loteId, int cantidad, string motivo, string? observacion, string usuario)
     {
+        if (cantidad <= 0)
+            return new ResultadoOperacion(false, "La cantidad a retirar debe ser mayor que cero.");
+        if (string.IsNullOrWhiteSpace(motivo))
+            return new ResultadoOperacion(false, "Indica el motivo de la baja.");
+
         await using var context = await _factory.CreateDbContextAsync();
         var lote = await context.Lotes.Include(l => l.Medicamento).FirstOrDefaultAsync(l => l.Id == loteId);
-        if (lote == null) return false;
+        if (lote == null)
+            return new ResultadoOperacion(false, "El lote ya no existe.");
+        if (cantidad > lote.Existencias)
+            return new ResultadoOperacion(false, $"El lote {lote.NumeroLote} solo tiene {lote.Existencias} u; no se pueden retirar {cantidad}.");
 
         var ahora = DateTime.Now;
-        int retiradas = lote.Existencias;
-        lote.Existencias = 0;
+        lote.Existencias -= cantidad;
+        lote.FechaUltimaActualizacion = ahora;
+        lote.Medicamento.FechaUltimaActualizacion = ahora;
+
+        context.BajasLote.Add(new BajaLote
+        {
+            LoteId = lote.Id,
+            MedicamentoId = lote.MedicamentoId,
+            Cantidad = cantidad,
+            Motivo = motivo.Trim(),
+            Observacion = string.IsNullOrWhiteSpace(observacion) ? null : observacion.Trim(),
+            Fecha = ahora,
+            Usuario = usuario.Trim()
+        });
+
+        await context.SaveChangesAsync();
+        LoggerService.Info($"Baja de {cantidad} u del lote {lote.NumeroLote} de «{lote.Medicamento.Nombre}» ({motivo}) por {usuario}.");
+        return new ResultadoOperacion(true,
+            $"Se retiraron {cantidad} u del lote {lote.NumeroLote} de «{lote.Medicamento.Nombre}» ({motivo.Trim()}).");
+    }
+
+    public async Task<ResultadoOperacion> ActualizarLoteAsync(int loteId, string numeroLote, DateTime fechaVencimiento)
+    {
+        var numero = NormalizarLote(numeroLote);
+        if (numero.Length == 0)
+            return new ResultadoOperacion(false, "El número de lote es obligatorio.");
+
+        await using var context = await _factory.CreateDbContextAsync();
+        var lote = await context.Lotes.Include(l => l.Medicamento).FirstOrDefaultAsync(l => l.Id == loteId);
+        if (lote == null)
+            return new ResultadoOperacion(false, "El lote ya no existe.");
+
+        bool duplicado = await context.Lotes.AnyAsync(l =>
+            l.MedicamentoId == lote.MedicamentoId && l.Id != loteId && l.NumeroLote == numero);
+        if (duplicado)
+        {
+            return new ResultadoOperacion(false,
+                $"«{lote.Medicamento.Nombre}» ya tiene otro lote {numero}. Si es el mismo, súmale las unidades con " +
+                "«Ingresar mercadería» y da de baja este.");
+        }
+
+        var ahora = DateTime.Now;
+        lote.NumeroLote = numero;
+        lote.FechaVencimiento = fechaVencimiento.Date;
         lote.FechaUltimaActualizacion = ahora;
         lote.Medicamento.FechaUltimaActualizacion = ahora;
 
         await context.SaveChangesAsync();
-        LoggerService.Info($"Baja del lote {lote.NumeroLote} de «{lote.Medicamento.Nombre}»: {retiradas} u retiradas.");
-        return true;
+        LoggerService.Info($"Lote corregido: «{lote.Medicamento.Nombre}» → {numero}, vence {fechaVencimiento:dd/MM/yyyy}.");
+        return new ResultadoOperacion(true, $"Lote actualizado: {numero}, vence {fechaVencimiento:dd/MM/yyyy}.");
+    }
+
+    public async Task<List<Lote>> ObtenerLotesConExistenciasAsync()
+    {
+        await using var context = await _factory.CreateDbContextAsync();
+        return await context.Lotes
+            .AsNoTracking()
+            .Include(l => l.Medicamento)
+            .Where(l => l.Existencias > 0)
+            .OrderBy(l => l.FechaVencimiento == null)
+            .ThenBy(l => l.FechaVencimiento)
+            .ThenBy(l => l.Medicamento.Nombre)
+            .ToListAsync();
+    }
+
+    public async Task<List<BajaLote>> ObtenerBajasRecientesAsync(int maximo = 50)
+    {
+        await using var context = await _factory.CreateDbContextAsync();
+        return await context.BajasLote
+            .AsNoTracking()
+            .Include(b => b.Lote)
+            .Include(b => b.Medicamento)
+            .OrderByDescending(b => b.Fecha)
+            .ThenByDescending(b => b.Id)
+            .Take(maximo)
+            .ToListAsync();
     }
 
     public async Task<bool> EliminarAsync(int id)

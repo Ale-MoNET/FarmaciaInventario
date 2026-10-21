@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using FarmaGestion.Data.Repositories;
+using FarmaGestion.Models;
 using FarmaGestion.Services;
 
 namespace FarmaGestion.ViewModels;
@@ -27,9 +30,35 @@ public class BarraDia
     public string Color { get; set; } = "#6634E0A1";
 }
 
+/// <summary>Fila del reporte de vencimientos (un lote con existencias).</summary>
+public class LoteVencimientoItem
+{
+    public Lote Lote { get; init; } = null!;
+    public string Producto { get; init; } = string.Empty;
+    public string Codigo { get; init; } = string.Empty;
+    public string NumeroLote { get; init; } = string.Empty;
+    public string VenceTexto { get; init; } = string.Empty;
+    public string DiasTexto { get; init; } = string.Empty;
+    public int Existencias { get; init; }
+    public EstadoLote Estado { get; init; }
+    public string EstadoTexto { get; init; } = string.Empty;
+}
+
+/// <summary>Fila de la lista de últimas bajas.</summary>
+public class BajaItem
+{
+    public string FechaTexto { get; init; } = string.Empty;
+    public string Producto { get; init; } = string.Empty;
+    public string NumeroLote { get; init; } = string.Empty;
+    public int Cantidad { get; init; }
+    public string Motivo { get; init; } = string.Empty;
+    public string Usuario { get; init; } = string.Empty;
+}
+
 public partial class ReportesViewModel : ObservableObject
 {
     private readonly IDespachoRepository _despachoRepo;
+    private readonly IMedicamentoRepository _medicamentoRepo;
     private const double AlturaMaxBarra = 150;
 
     [ObservableProperty] private DateTime? _fechaInicio = DateTime.Today.AddDays(-7);
@@ -52,15 +81,113 @@ public partial class ReportesViewModel : ObservableObject
     public ObservableCollection<DespachoReporteItem> DespachosRango { get; } = new();
     public ObservableCollection<BarraDia> Barras { get; } = new();
 
-    public ReportesViewModel(IDespachoRepository despachoRepo)
+    // ----- Vencimientos de lotes -----
+    private List<Lote> _lotesConStock = new();
+
+    /// <summary>Horizonte activo como texto: "0" vencidos, "30"/"60"/"90" días, "-1" todos.</summary>
+    [ObservableProperty] private string _horizonte = "90";
+
+    [ObservableProperty] private string _cVencidos = "0";
+    [ObservableProperty] private string _c30 = "0";
+    [ObservableProperty] private string _c60 = "0";
+    [ObservableProperty] private string _c90 = "0";
+    [ObservableProperty] private string _tituloLotes = string.Empty;
+    [ObservableProperty] private bool _sinLotes = true;
+    [ObservableProperty] private bool _sinBajas = true;
+
+    public ObservableCollection<LoteVencimientoItem> LotesVencimiento { get; } = new();
+    public ObservableCollection<BajaItem> BajasRecientes { get; } = new();
+
+    public ReportesViewModel(IDespachoRepository despachoRepo, IMedicamentoRepository medicamentoRepo)
     {
         _despachoRepo = despachoRepo;
+        _medicamentoRepo = medicamentoRepo;
         _ = GenerarReporteAsync();
+        _ = CargarVencimientosAsync();
+
+        // Cualquier ingreso, despacho o baja refresca el reporte de vencimientos.
+        WeakReferenceMessenger.Default.Register<InventarioActualizadoMessage>(this, (_, _) =>
+        {
+            Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () => await CargarVencimientosAsync());
+        });
     }
 
     // Reactivo: al cambiar cualquiera de las fechas se regenera el reporte.
     partial void OnFechaInicioChanged(DateTime? value) => _ = GenerarReporteAsync();
     partial void OnFechaFinChanged(DateTime? value) => _ = GenerarReporteAsync();
+    partial void OnHorizonteChanged(string value) => AplicarFiltroVencimientos();
+
+    [RelayCommand]
+    private void SeleccionarHorizonte(string horizonte) => Horizonte = horizonte;
+
+    [RelayCommand]
+    public async Task CargarVencimientosAsync()
+    {
+        try
+        {
+            _lotesConStock = await _medicamentoRepo.ObtenerLotesConExistenciasAsync();
+
+            var (vencidos, en30, en60, en90) = ReporteVencimientos.Contar(_lotesConStock, DateTime.Today);
+            CVencidos = vencidos.ToString();
+            C30 = en30.ToString();
+            C60 = en60.ToString();
+            C90 = en90.ToString();
+            AplicarFiltroVencimientos();
+
+            var bajas = await _medicamentoRepo.ObtenerBajasRecientesAsync(30);
+            BajasRecientes.Clear();
+            foreach (var b in bajas)
+            {
+                BajasRecientes.Add(new BajaItem
+                {
+                    FechaTexto = b.Fecha.ToString("dd/MM/yyyy · HH:mm"),
+                    Producto = b.Medicamento?.Nombre ?? "—",
+                    NumeroLote = b.Lote?.NumeroLote ?? "—",
+                    Cantidad = b.Cantidad,
+                    Motivo = string.IsNullOrWhiteSpace(b.Observacion) ? b.Motivo : $"{b.Motivo} · {b.Observacion}",
+                    Usuario = string.IsNullOrWhiteSpace(b.Usuario) ? "—" : b.Usuario
+                });
+            }
+            SinBajas = BajasRecientes.Count == 0;
+        }
+        catch (Exception ex)
+        {
+            LoggerService.Error("Error al cargar el reporte de vencimientos", ex);
+        }
+    }
+
+    private void AplicarFiltroVencimientos()
+    {
+        int horizonte = int.TryParse(Horizonte, out var h) ? h : 90;
+        var hoy = DateTime.Today;
+
+        LotesVencimiento.Clear();
+        foreach (var lote in ReporteVencimientos.Filtrar(_lotesConStock, horizonte, hoy))
+        {
+            LotesVencimiento.Add(new LoteVencimientoItem
+            {
+                Lote = lote,
+                Producto = lote.Medicamento?.Nombre ?? "—",
+                Codigo = lote.Medicamento?.CodigoBarras ?? "—",
+                NumeroLote = lote.NumeroLote,
+                VenceTexto = lote.FechaVencimiento?.ToString("dd/MM/yyyy") ?? "—",
+                DiasTexto = ReporteVencimientos.TextoDias(lote, hoy),
+                Existencias = lote.Existencias,
+                Estado = lote.CalcularEstado(hoy),
+                EstadoTexto = lote.EstadoTexto
+            });
+        }
+
+        SinLotes = LotesVencimiento.Count == 0;
+        int n = LotesVencimiento.Count;
+        string s = n == 1 ? "" : "s";
+        TituloLotes = horizonte switch
+        {
+            ReporteVencimientos.Vencidos => $"{n} lote{s} vencido{s} con existencias",
+            ReporteVencimientos.Todos => $"{n} lote{s} con existencias",
+            _ => $"{n} lote{s} que {(n == 1 ? "vence" : "vencen")} en los próximos {horizonte} días"
+        };
+    }
 
     [RelayCommand]
     public async Task GenerarReporteAsync()

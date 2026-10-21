@@ -99,26 +99,31 @@ public partial class InventarioView : UserControl
     {
         if (sender is not Control { DataContext: Lote lote } control) return;
         if (Propietaria is not { } owner) return;
-        if (DataContext is not InventarioViewModel vm) return;
 
-        // El nombre del producto viene de la fila que contiene el detalle.
+        var ventana = new BajaLoteWindow(lote, NombreProductoDeFila(control, lote));
+        await ventana.ShowDialog(owner);
+
+        if (DataContext is InventarioViewModel vm)
+            await vm.CargarInventarioAsync();
+    }
+
+    private async void BtnEditarLote_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Control { DataContext: Lote lote } control) return;
+        if (Propietaria is not { } owner) return;
+
+        var ventana = new EditarLoteWindow(lote, NombreProductoDeFila(control, lote));
+        await ventana.ShowDialog(owner);
+
+        if (DataContext is InventarioViewModel vm)
+            await vm.CargarInventarioAsync();
+    }
+
+    /// <summary>El nombre del producto viene de la fila que contiene el detalle de lotes.</summary>
+    private static string NombreProductoDeFila(Control control, Lote lote)
+    {
         var producto = control.FindAncestorOfType<DataGridRow>()?.DataContext as Medicamentos ?? lote.Medicamento;
-        string nombre = producto?.Nombre ?? "este producto";
-
-        var confirm = new ConfirmWindow(
-            "Dar de baja el lote",
-            $"Se retirarán {lote.Existencias} u del lote {lote.NumeroLote} de «{nombre}» y quedará en cero. Úsalo para lotes vencidos o dañados. ¿Continuar?",
-            "Dar de baja");
-        if (!await confirm.ShowDialog<bool>(owner)) return;
-
-        bool ok = await vm.DarDeBajaLoteAsync(lote.Id);
-        if (!ok)
-        {
-            var aviso = new ConfirmWindow("No se pudo dar de baja",
-                "El lote ya no existe o hubo un error al guardar. Revisa el inventario e inténtalo de nuevo.",
-                "Entendido", peligro: false, mostrarCancelar: false);
-            await aviso.ShowDialog<bool>(owner);
-        }
+        return producto?.Nombre ?? "este producto";
     }
     
     private async void BtnImportarCSV_Click(object? sender, RoutedEventArgs e)

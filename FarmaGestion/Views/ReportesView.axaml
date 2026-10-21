@@ -1,11 +1,36 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:FarmaGestion.ViewModels"
+             xmlns:conv="clr-namespace:FarmaGestion.Views.Converters"
              x:Class="FarmaGestion.Views.ReportesView"
              x:DataType="vm:ReportesViewModel"
              Background="#0A0D13">
 
+    <UserControl.Resources>
+        <conv:RoleFilterBgConverter x:Key="FiltroBg"/>
+        <conv:RoleFilterFgConverter x:Key="FiltroFg"/>
+        <conv:EstadoLoteColorConverter x:Key="EstadoLoteColor"/>
+    </UserControl.Resources>
+
     <UserControl.Styles>
+        <Style Selector="Button.chip">
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderBrush" Value="#1FFFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Button.ghost">
+            <Setter Property="Background" Value="#08FFFFFF"/>
+            <Setter Property="Foreground" Value="#C2CCD6"/>
+            <Setter Property="BorderBrush" Value="#1FFFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
         <Style Selector="TextBlock.eyebrow">
             <Setter Property="FontFamily" Value="Consolas, 'Courier New', monospace"/>
             <Setter Property="FontSize" Value="10"/>
@@ -25,6 +50,153 @@
 
     <ScrollViewer Background="#0A0D13">
         <StackPanel Margin="22" Spacing="16">
+
+
+            <!-- Vencimientos de lotes -->
+            <Border CornerRadius="14" BorderBrush="#12FFFFFF" BorderThickness="1" Background="#04FFFFFF" Padding="20,18">
+                <StackPanel Spacing="14">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="VENCIMIENTOS DE LOTES" Classes="eyebrow"/>
+                            <TextBlock Text="Lotes con existencias según su fecha de vencimiento. Da de baja los vencidos desde aquí."
+                                       FontSize="12.5" Foreground="#8B96A4" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Classes="ghost" Content="Actualizar" VerticalAlignment="Top"
+                                Command="{Binding CargarVencimientosCommand}"/>
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Classes="chip" Command="{Binding SeleccionarHorizonteCommand}" CommandParameter="0"
+                                Background="{Binding Horizonte, Converter={StaticResource FiltroBg}, ConverterParameter=0}"
+                                Foreground="{Binding Horizonte, Converter={StaticResource FiltroFg}, ConverterParameter=0}">
+                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                <TextBlock Text="Vencidos"/><TextBlock Text="{Binding CVencidos}" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Classes="chip" Command="{Binding SeleccionarHorizonteCommand}" CommandParameter="30"
+                                Background="{Binding Horizonte, Converter={StaticResource FiltroBg}, ConverterParameter=30}"
+                                Foreground="{Binding Horizonte, Converter={StaticResource FiltroFg}, ConverterParameter=30}">
+                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                <TextBlock Text="30 días"/><TextBlock Text="{Binding C30}" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Classes="chip" Command="{Binding SeleccionarHorizonteCommand}" CommandParameter="60"
+                                Background="{Binding Horizonte, Converter={StaticResource FiltroBg}, ConverterParameter=60}"
+                                Foreground="{Binding Horizonte, Converter={StaticResource FiltroFg}, ConverterParameter=60}">
+                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                <TextBlock Text="60 días"/><TextBlock Text="{Binding C60}" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Classes="chip" Command="{Binding SeleccionarHorizonteCommand}" CommandParameter="90"
+                                Background="{Binding Horizonte, Converter={StaticResource FiltroBg}, ConverterParameter=90}"
+                                Foreground="{Binding Horizonte, Converter={StaticResource FiltroFg}, ConverterParameter=90}">
+                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                <TextBlock Text="90 días"/><TextBlock Text="{Binding C90}" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Classes="chip" Content="Todos" Command="{Binding SeleccionarHorizonteCommand}" CommandParameter="-1"
+                                Background="{Binding Horizonte, Converter={StaticResource FiltroBg}, ConverterParameter=-1}"
+                                Foreground="{Binding Horizonte, Converter={StaticResource FiltroFg}, ConverterParameter=-1}"/>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding TituloLotes}" FontSize="12.5" Foreground="#C2CCD6"/>
+
+                    <Border CornerRadius="12" BorderBrush="#12FFFFFF" BorderThickness="1" ClipToBounds="True">
+                        <Grid RowDefinitions="Auto,Auto">
+                            <Grid Grid.Row="0" ColumnDefinitions="*,120,120,110,110,90,150,110" Background="#08FFFFFF">
+                                <TextBlock Grid.Column="0" Text="PRODUCTO" Classes="eyebrow" Margin="16,11"/>
+                                <TextBlock Grid.Column="1" Text="CÓDIGO" Classes="eyebrow" Margin="0,11"/>
+                                <TextBlock Grid.Column="2" Text="LOTE" Classes="eyebrow" Margin="0,11"/>
+                                <TextBlock Grid.Column="3" Text="VENCE" Classes="eyebrow" Margin="0,11"/>
+                                <TextBlock Grid.Column="4" Text="DÍAS" Classes="eyebrow" Margin="0,11"/>
+                                <TextBlock Grid.Column="5" Text="EXISTENCIA" Classes="eyebrow" Margin="0,11"/>
+                                <TextBlock Grid.Column="6" Text="ESTADO" Classes="eyebrow" Margin="0,11"/>
+                                <TextBlock Grid.Column="7" Text="" Classes="eyebrow"/>
+                            </Grid>
+                            <ScrollViewer Grid.Row="1" MaxHeight="340" VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <ItemsControl ItemsSource="{Binding LotesVencimiento}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:LoteVencimientoItem">
+                                                <Border BorderBrush="#0CFFFFFF" BorderThickness="0,0,0,1">
+                                                    <Grid ColumnDefinitions="*,120,120,110,110,90,150,110" Height="44">
+                                                        <TextBlock Grid.Column="0" Text="{Binding Producto}" Margin="16,0" FontSize="13"
+                                                                   Foreground="#EEF2F6" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Codigo}" FontFamily="Consolas, monospace" FontSize="12"
+                                                                   Foreground="#8B96A4" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding NumeroLote}" FontFamily="Consolas, monospace" FontSize="12.5"
+                                                                   Foreground="#C2CCD6" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Grid.Column="3" Text="{Binding VenceTexto}" FontSize="12.5"
+                                                                   Foreground="#C2CCD6" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="4" Text="{Binding DiasTexto}" FontSize="12.5"
+                                                                   Foreground="#8B96A4" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="5" Text="{Binding Existencias, StringFormat='{}{0} u'}" FontFamily="Consolas, monospace"
+                                                                   FontSize="12.5" Foreground="#EEF2F6" VerticalAlignment="Center"/>
+                                                        <Border Grid.Column="6" HorizontalAlignment="Left" VerticalAlignment="Center" CornerRadius="999" Padding="10,3"
+                                                                Background="{Binding Estado, Converter={StaticResource EstadoLoteColor}}">
+                                                            <TextBlock Text="{Binding EstadoTexto}" FontSize="11" FontWeight="SemiBold"
+                                                                       Foreground="{Binding Estado, Converter={StaticResource EstadoLoteColor}, ConverterParameter=fg}"/>
+                                                        </Border>
+                                                        <Button Grid.Column="7" Content="Dar de baja" Click="BtnBajaLote_Click"
+                                                                HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                                FontSize="11.5" Padding="10,4" CornerRadius="8"
+                                                                Background="#08FFFFFF" Foreground="#FF8B8B"
+                                                                BorderBrush="#2EFF6B6B" BorderThickness="1"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Text="No hay lotes en este rango." IsVisible="{Binding SinLotes}"
+                                               Foreground="#8B96A4" FontSize="13.5" HorizontalAlignment="Center" Margin="0,28"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+
+                    <TextBlock Text="ÚLTIMAS BAJAS" Classes="eyebrow" Margin="0,8,0,0"/>
+                    <Border CornerRadius="12" BorderBrush="#12FFFFFF" BorderThickness="1" ClipToBounds="True">
+                        <Grid RowDefinitions="Auto,Auto">
+                            <Grid Grid.Row="0" ColumnDefinitions="150,*,120,80,1.2*,120" Background="#08FFFFFF">
+                                <TextBlock Grid.Column="0" Text="FECHA" Classes="eyebrow" Margin="16,11"/>
+                                <TextBlock Grid.Column="1" Text="PRODUCTO" Classes="eyebrow" Margin="0,11"/>
+                                <TextBlock Grid.Column="2" Text="LOTE" Classes="eyebrow" Margin="0,11"/>
+                                <TextBlock Grid.Column="3" Text="CANT." Classes="eyebrow" Margin="0,11"/>
+                                <TextBlock Grid.Column="4" Text="MOTIVO" Classes="eyebrow" Margin="0,11"/>
+                                <TextBlock Grid.Column="5" Text="USUARIO" Classes="eyebrow" Margin="0,11"/>
+                            </Grid>
+                            <ScrollViewer Grid.Row="1" MaxHeight="220" VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <ItemsControl ItemsSource="{Binding BajasRecientes}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:BajaItem">
+                                                <Border BorderBrush="#0CFFFFFF" BorderThickness="0,0,0,1">
+                                                    <Grid ColumnDefinitions="150,*,120,80,1.2*,120" Height="40">
+                                                        <TextBlock Grid.Column="0" Text="{Binding FechaTexto}" Margin="16,0" FontSize="12.5"
+                                                                   Foreground="#C2CCD6" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Producto}" FontSize="13"
+                                                                   Foreground="#EEF2F6" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding NumeroLote}" FontFamily="Consolas, monospace" FontSize="12.5"
+                                                                   Foreground="#C2CCD6" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="3" Text="{Binding Cantidad, StringFormat='{}{0} u'}" FontFamily="Consolas, monospace"
+                                                                   FontSize="12.5" Foreground="#FF8B8B" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="4" Text="{Binding Motivo}" FontSize="12.5"
+                                                                   Foreground="#C2CCD6" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Grid.Column="5" Text="{Binding Usuario}" FontSize="12.5"
+                                                                   Foreground="#8B96A4" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Text="Todavía no se ha registrado ninguna baja." IsVisible="{Binding SinBajas}"
+                                               Foreground="#8B96A4" FontSize="13" HorizontalAlignment="Center" Margin="0,22"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
 
             <!-- Producto más / menos vendido -->
             <Grid ColumnDefinitions="*,16,*">

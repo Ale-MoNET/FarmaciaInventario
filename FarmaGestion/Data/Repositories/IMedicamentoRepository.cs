@@ -24,6 +24,9 @@ public record ResultadoIngreso(bool Exito, string Mensaje, bool LoteNuevo = fals
 /// <summary>Resultado de una importación: filas aplicadas y motivos de las rechazadas.</summary>
 public record ResultadoImportacion(int Procesadas, IReadOnlyList<string> Rechazadas);
 
+/// <summary>Resultado genérico de una operación sobre lotes (baja, edición).</summary>
+public record ResultadoOperacion(bool Exito, string Mensaje);
+
 public interface IMedicamentoRepository
 {
     /// <summary>Todos los productos con sus lotes, ordenados por nombre.</summary>
@@ -46,8 +49,20 @@ public interface IMedicamentoRepository
     /// </summary>
     Task<ResultadoIngreso> IngresarLoteAsync(int medicamentoId, string numeroLote, DateTime fechaVencimiento, int cantidad);
 
-    /// <summary>Deja el lote en cero existencias (vencido, dañado, etc.). Devuelve false si no existe.</summary>
-    Task<bool> DarDeBajaLoteAsync(int loteId);
+    /// <summary>
+    /// Retira unidades de un lote (vencido, dañado, pérdida…) dejando registro de la baja con su
+    /// motivo y quién la hizo. La cantidad debe ser positiva y no mayor que las existencias del lote.
+    /// </summary>
+    Task<ResultadoOperacion> DarDeBajaLoteAsync(int loteId, int cantidad, string motivo, string? observacion, string usuario);
+
+    /// <summary>Corrige el número o la fecha de vencimiento de un lote (no toca existencias).</summary>
+    Task<ResultadoOperacion> ActualizarLoteAsync(int loteId, string numeroLote, DateTime fechaVencimiento);
+
+    /// <summary>Lotes con existencias, con su producto, para el reporte de vencimientos.</summary>
+    Task<List<Lote>> ObtenerLotesConExistenciasAsync();
+
+    /// <summary>Últimas bajas registradas (más recientes primero), con lote y producto.</summary>
+    Task<List<BajaLote>> ObtenerBajasRecientesAsync(int maximo = 50);
 
     /// <summary>
     /// Elimina un medicamento con todos sus lotes. Devuelve false si no se puede porque

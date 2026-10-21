@@ -47,14 +47,38 @@ public class DespachoRepository : IDespachoRepository
                         "❌ Uno de los productos ya no existe en el inventario.");
                 }
 
-                // Repartimos la cantidad entre los lotes (FEFO) con las existencias de este instante.
-                var asignacion = AsignadorLotes.Asignar(producto.Lotes, linea.Cantidad, hoy);
-                if (!asignacion.Completa)
+                // Repartimos la cantidad entre los lotes con las existencias de este instante:
+                // por FEFO, o solo del lote que eligió la cajera.
+                ResultadoAsignacion asignacion;
+                if (linea.LoteId is int loteElegidoId)
                 {
-                    await transaccion.RollbackAsync();
-                    return new ResultadoDespacho(false,
-                        $"❌ Stock insuficiente de '{producto.Nombre}' " +
-                        $"(disponibles: {producto.Existencias}, solicitados: {linea.Cantidad}).");
+                    var loteElegido = producto.Lotes.FirstOrDefault(l => l.Id == loteElegidoId);
+                    if (loteElegido == null)
+                    {
+                        await transaccion.RollbackAsync();
+                        return new ResultadoDespacho(false,
+                            $"❌ El lote elegido para '{producto.Nombre}' ya no existe. Vuelve a agregar el producto.");
+                    }
+
+                    asignacion = AsignadorLotes.Asignar(new[] { loteElegido }, linea.Cantidad, hoy);
+                    if (!asignacion.Completa)
+                    {
+                        await transaccion.RollbackAsync();
+                        return new ResultadoDespacho(false,
+                            $"❌ El lote {loteElegido.NumeroLote} de '{producto.Nombre}' solo tiene " +
+                            $"{loteElegido.Existencias} u (solicitados: {linea.Cantidad}).");
+                    }
+                }
+                else
+                {
+                    asignacion = AsignadorLotes.Asignar(producto.Lotes, linea.Cantidad, hoy);
+                    if (!asignacion.Completa)
+                    {
+                        await transaccion.RollbackAsync();
+                        return new ResultadoDespacho(false,
+                            $"❌ Stock insuficiente de '{producto.Nombre}' " +
+                            $"(disponibles: {producto.Existencias}, solicitados: {linea.Cantidad}).");
+                    }
                 }
 
                 foreach (var parte in asignacion.Asignaciones)
@@ -126,20 +150,23 @@ public class DespachoRepository : IDespachoRepository
                 x.Medicamento.CodigoBarras,
                 x.Medicamento.Nombre,
                 x.Cantidad,
-                x.PrecioHistorico
+                x.PrecioHistorico,
+                x.LoteId,
+                NumeroLote = x.Lote != null ? x.Lote.NumeroLote : null
             })
             .ToListAsync();
 
-        // Un producto puede haber salido de varios lotes (un detalle por lote); en el
-        // comprobante se muestra una sola línea por producto.
+        // Una línea por producto y lote (trazabilidad); los despachos anteriores a la versión
+        // 1.1 no tienen lote y quedan agrupados por producto.
         var lineas = detalles
-            .GroupBy(x => new { x.MedicamentoId, x.PrecioHistorico })
+            .GroupBy(x => new { x.MedicamentoId, x.PrecioHistorico, x.LoteId })
             .OrderBy(g => g.Min(x => x.Id))
             .Select(g => new LineaComprobante(
                 g.First().CodigoBarras,
                 g.First().Nombre,
                 g.Sum(x => x.Cantidad),
-                g.Key.PrecioHistorico))
+                g.Key.PrecioHistorico,
+                g.First().NumeroLote))
             .ToList();
 
         return new ComprobanteDespacho(despacho.Id, despacho.Fecha, despacho.Total, lineas);

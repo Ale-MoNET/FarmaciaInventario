@@ -128,6 +128,18 @@
                                                            FontSize="11" Foreground="#8B96A4" TextWrapping="Wrap"/>
                                                 <TextBlock Text="{Binding Advertencia}" IsVisible="{Binding TieneAdvertencia}"
                                                            FontSize="11" Foreground="#FFC061" TextWrapping="Wrap"/>
+                                                <ComboBox IsVisible="{Binding MostrarSelectorLote}"
+                                                          ItemsSource="{Binding OpcionesLote}"
+                                                          SelectedItem="{Binding OpcionLoteSeleccionada}"
+                                                          FontSize="11.5" MinHeight="26" Padding="8,2"
+                                                          Margin="0,4,12,0" HorizontalAlignment="Left" MaxWidth="420"
+                                                          ToolTip.Tip="Elige de qué lote sale este producto (por defecto, el que vence antes)">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate x:DataType="vm:OpcionLote">
+                                                            <TextBlock Text="{Binding Texto}" FontSize="11.5"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
                                             </StackPanel>
                                             <TextBlock Grid.Column="2" Text="{Binding PrecioTexto}" HorizontalAlignment="Right"
                                                        FontFamily="Consolas, monospace" FontSize="13" Foreground="#C2CCD6" VerticalAlignment="Center"/>

@@ -59,7 +59,15 @@ NOVEDADES DE LA VERSIÓN 1.1: INVENTARIO POR LOTES
   antes (FEFO). Los lotes vencidos no se usan mientras haya vigentes; si se usan, la
   app advierte pero no bloquea la venta.
 - Al actualizar desde la 1.0, cada producto con existencias queda con un solo lote
-  (su lote y vencimiento anteriores, o "INICIAL" si no tenía lote).
+  (su lote y vencimiento anteriores, o "INICIAL" si no tenía lote). Si algún lote
+  quedó con número o fecha equivocados, corrígelo con "Editar" en la fila del lote.
+- Dar de baja pide la cantidad y el motivo (vencido, dañado, pérdida, ajuste, otro) y
+  deja registro de quién lo hizo. Se puede hacer desde Inventario o desde Reportes.
+- Reportes muestra "Vencimientos de lotes": vencidos y los que vencen en 30, 60 o 90
+  días, con botón para darlos de baja, y la lista de las últimas bajas.
+- En Despacho, si un producto tiene más de un lote, aparece un selector para elegir
+  de cuál sale (por defecto, el que vence antes). El comprobante imprime el lote de
+  cada línea.
 
 DESINSTALAR
 -----------
