@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -32,12 +33,18 @@ public partial class App : Application
             AppConfig.Inicializar();
             Services = ServiceConfiguration.Construir();
 
-            // 2. Aplicar migraciones pendientes y crear el super usuario (una sola vez)
+            // 2. Preparar la base de datos: comprobar versión, aplicar migraciones pendientes
+            //    y crear el super usuario (una sola vez). Si algo falla, se informa en vez de cerrar sin más.
             var factory = Services.GetRequiredService<IDbContextFactory<InventarioContext>>();
-            using (var context = factory.CreateDbContext())
+            string? problema = PrepararBaseDeDatos(factory);
+            if (problema != null)
             {
-                context.Database.Migrate();
-                AuthService.SeedSuperUsuario(context);
+                var aviso = new ConfirmWindow("No se pudo iniciar FarmaGestión", problema,
+                    "Cerrar", peligro: false, mostrarCancelar: false);
+                aviso.Closed += (_, _) => desktop.Shutdown();
+                desktop.MainWindow = aviso;
+                base.OnFrameworkInitializationCompleted();
+                return;
             }
 
             // 3. Crear la ventana de login con su ViewModel inyectado
@@ -63,5 +70,41 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// Aplica las migraciones y siembra el admin. Devuelve un mensaje para el usuario si no
+    /// se puede continuar: base inaccesible, o base ya migrada por una versión más nueva de
+    /// la app (ocurre con la base compartida cuando una PC se actualiza antes que las demás).
+    /// </summary>
+    private static string? PrepararBaseDeDatos(IDbContextFactory<InventarioContext> factory)
+    {
+        try
+        {
+            using var context = factory.CreateDbContext();
+
+            var conocidas = context.Database.GetMigrations().ToHashSet();
+            var desconocidas = context.Database.GetAppliedMigrations()
+                .Where(m => !conocidas.Contains(m))
+                .ToList();
+
+            if (desconocidas.Count > 0)
+            {
+                LoggerService.Error("La base de datos fue migrada por una versión más nueva: " +
+                                    string.Join(", ", desconocidas), new InvalidOperationException("Versión de base de datos más nueva que la app"));
+                return "La base de datos ya fue actualizada por una versión más nueva de FarmaGestión. " +
+                       "Instala la versión nueva en esta PC para seguir trabajando.";
+            }
+
+            context.Database.Migrate();
+            AuthService.SeedSuperUsuario(context);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            LoggerService.Error("No se pudo preparar la base de datos al iniciar", ex);
+            return "No se pudo abrir la base de datos en:\n" + AppConfig.ConnectionString +
+                   "\n\nRevisa que la carpeta exista y tengas permiso de escritura (si es una carpeta compartida, que el servidor esté encendido).\n\nDetalle: " + ex.Message;
+        }
     }
 }

@@ -73,6 +73,23 @@ public class ComprobantePdfTests
     }
 
     [Fact]
+    public void Generar_ImprimeElLoteDeCadaLinea()
+    {
+        var comprobante = new ComprobanteDespacho(3, DateTime.Now, 10m, new[]
+        {
+            new LineaComprobante("001", "Paracetamol 500 mg", 2, 5m, "L-77A"),
+            new LineaComprobante("002", "Producto sin lote (histórico)", 1, 0m)
+        });
+
+        var pdf = ComprobantePdf.Generar(comprobante);
+
+        ValidarEstructura(pdf);
+        var texto = Encoding.Latin1.GetString(pdf);
+        Assert.Contains("Lote L-77A", texto);
+        Assert.Contains("Paracetamol 500 mg", texto);
+    }
+
+    [Fact]
     public void Generar_SinLineas_NoFalla()
     {
         var comprobante = new ComprobanteDespacho(1, DateTime.Now, 0m, new List<LineaComprobante>());

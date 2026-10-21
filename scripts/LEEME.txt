@@ -35,8 +35,39 @@ cualquier carpeta y ábrelo con doble clic.
 
 ACTUALIZAR A UNA VERSIÓN NUEVA
 ------------------------------
-Cierra FarmaGestión y ejecuta el Instalar.bat del paquete nuevo. Los datos y el
-appsettings.json ya configurado se conservan.
+1. Respalda el archivo inventario_medicamentos.db (ver "Datos y respaldo").
+2. Cierra FarmaGestión en TODAS las PC.
+3. Ejecuta el Instalar.bat del paquete nuevo en cada PC, el mismo día. Los datos y
+   el appsettings.json ya configurado se conservan.
+La primera PC que abra la versión nueva actualiza la base de datos automáticamente.
+Una PC con la versión anterior ya no podrá entrar hasta que se actualice (la app
+lo avisa con el mensaje "Instala la versión nueva").
+
+NOVEDADES DE LA VERSIÓN 1.1: INVENTARIO POR LOTES
+-------------------------------------------------
+- Cada producto se controla por lotes: número de lote, vencimiento y existencias
+  propias. El stock del producto es la suma de sus lotes.
+- Ingresar mercadería (botón verde en Inventario): escanea el código, captura lote,
+  vencimiento y cantidad. Si el lote ya existe se suman las unidades; si no, se crea.
+  El lote y la fecha son obligatorios.
+- Registrar producto: solo datos del producto; opcionalmente su primer lote.
+  Editar producto ya no cambia existencias: eso se hace por lotes.
+- En la tabla de Inventario, al seleccionar un producto se despliegan sus lotes con
+  su estado (vigente, por vencer en 90 días, vencido). El botón "Dar de baja" deja
+  un lote en cero (vencido, dañado, etc.).
+- Despacho: la cajera escanea igual. El sistema descuenta primero del lote que vence
+  antes (FEFO). Los lotes vencidos no se usan mientras haya vigentes; si se usan, la
+  app advierte pero no bloquea la venta.
+- Al actualizar desde la 1.0, cada producto con existencias queda con un solo lote
+  (su lote y vencimiento anteriores, o "INICIAL" si no tenía lote). Si algún lote
+  quedó con número o fecha equivocados, corrígelo con "Editar" en la fila del lote.
+- Dar de baja pide la cantidad y el motivo (vencido, dañado, pérdida, ajuste, otro) y
+  deja registro de quién lo hizo. Se puede hacer desde Inventario o desde Reportes.
+- Reportes muestra "Vencimientos de lotes": vencidos y los que vencen en 30, 60 o 90
+  días, con botón para darlos de baja, y la lista de las últimas bajas.
+- En Despacho, si un producto tiene más de un lote, aparece un selector para elegir
+  de cuál sale (por defecto, el que vence antes). El comprobante imprime el lote de
+  cada línea.
 
 DESINSTALAR
 -----------
@@ -87,9 +118,11 @@ Desde Inventario > Importar CSV. Formato (ver productos_ejemplo.csv):
 
   Codigo,Nombre,Precio,Existencias,Lote,Vencimiento
 
-La primera fila es el encabezado. Lote y Vencimiento son opcionales; la fecha va
-como AAAA-MM-DD. No uses comas dentro del nombre. Si el código ya existe, se
-suman las existencias y se actualiza el precio.
+La primera fila es el encabezado. Cada fila es un ingreso de lote: Existencias es
+la cantidad que entra de ese lote. Lote y Vencimiento son obligatorios; la fecha
+va como AAAA-MM-DD. No uses comas dentro del nombre. Si el código ya existe, se
+actualiza el precio; si el lote ya existe, se le suman las unidades; si es otro
+lote, se crea. Las filas incompletas se rechazan y se muestran al final.
 
 macOS
 -----

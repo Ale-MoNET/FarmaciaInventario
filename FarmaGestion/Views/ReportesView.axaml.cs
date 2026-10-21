@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using FarmaGestion.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,5 +11,17 @@ public partial class ReportesView : UserControl
     {
         InitializeComponent();
         DataContext = App.Services.GetRequiredService<ReportesViewModel>();
+    }
+
+    private async void BtnBajaLote_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Control { DataContext: LoteVencimientoItem item }) return;
+        if (TopLevel.GetTopLevel(this) is not Window owner) return;
+
+        var ventana = new BajaLoteWindow(item.Lote, item.Producto);
+        await ventana.ShowDialog(owner);
+
+        if (DataContext is ReportesViewModel vm)
+            await vm.CargarVencimientosAsync();
     }
 }

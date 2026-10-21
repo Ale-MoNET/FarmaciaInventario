@@ -5,14 +5,24 @@ using System.Threading.Tasks;
 
 namespace FarmaGestion.Data.Repositories;
 
-/// <summary>Una línea solicitada para el despacho.</summary>
-public record LineaDespacho(int MedicamentoId, int Cantidad);
+/// <summary>
+/// Una línea solicitada para el despacho. <paramref name="LoteId"/> fuerza un lote concreto;
+/// si es nulo, las unidades salen por regla FEFO.
+/// </summary>
+public record LineaDespacho(int MedicamentoId, int Cantidad, int? LoteId = null);
 
 /// <summary>Resultado de confirmar un despacho.</summary>
-public record ResultadoDespacho(bool Exito, string Mensaje, int? DespachoId = null);
+public record ResultadoDespacho(bool Exito, string Mensaje, int? DespachoId = null)
+{
+    /// <summary>Avisos no bloqueantes, p. ej. unidades que salieron de lotes vencidos.</summary>
+    public IReadOnlyList<string> Advertencias { get; init; } = Array.Empty<string>();
+}
 
-/// <summary>Una línea del comprobante, con el precio al que realmente se vendió.</summary>
-public record LineaComprobante(string Codigo, string Nombre, int Cantidad, decimal PrecioUnitario)
+/// <summary>
+/// Una línea del comprobante, con el precio al que realmente se vendió y el lote del que
+/// salió (nulo en despachos anteriores a la versión 1.1).
+/// </summary>
+public record LineaComprobante(string Codigo, string Nombre, int Cantidad, decimal PrecioUnitario, string? Lote = null)
 {
     public decimal Subtotal => PrecioUnitario * Cantidad;
 }
@@ -54,14 +64,15 @@ public class ReporteVentas
 public interface IDespachoRepository
 {
     /// <summary>
-    /// Confirma un despacho dentro de una transacción: valida stock, rebaja inventario
-    /// y registra el despacho con sus detalles. Si algo falla, no se realiza ningún cambio.
+    /// Confirma un despacho dentro de una transacción: valida stock, rebaja los lotes por
+    /// regla FEFO (vence primero, sale primero) y registra el despacho con un detalle por
+    /// lote. Si algo falla, no se realiza ningún cambio.
     /// </summary>
     Task<ResultadoDespacho> ConfirmarAsync(IEnumerable<LineaDespacho> lineas);
 
     /// <summary>
     /// Recupera un despacho ya registrado con el detalle de sus líneas para armar el
-    /// comprobante. Devuelve null si el despacho no existe.
+    /// comprobante (una línea por producto y lote). Devuelve null si el despacho no existe.
     /// </summary>
     Task<ComprobanteDespacho?> ObtenerComprobanteAsync(int despachoId);
 

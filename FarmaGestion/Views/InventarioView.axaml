@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:FarmaGestion.ViewModels"
+             xmlns:models="clr-namespace:FarmaGestion.Models"
              xmlns:conv="clr-namespace:FarmaGestion.Views.Converters"
              x:Class="FarmaGestion.Views.InventarioView"
              x:DataType="vm:InventarioViewModel">
@@ -8,6 +9,8 @@
     <UserControl.Resources>
         <conv:StockColorConverter x:Key="StockColor"/>
         <conv:StockLabelConverter x:Key="StockLabel"/>
+        <conv:EstadoLoteColorConverter x:Key="EstadoLoteColor"/>
+        <conv:FechaCortaConverter x:Key="FechaCorta"/>
     </UserControl.Resources>
 
     <UserControl.Styles>
@@ -33,6 +36,15 @@
             <Setter Property="Fill" Value="Transparent"/>
         </Style>
 
+        <!-- Botones de acción por fila -->
+        <Style Selector="Button.fila">
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
         <!-- DataGrid oscuro -->
         <Style Selector="DataGrid">
             <Setter Property="Background" Value="Transparent"/>
@@ -54,6 +66,10 @@
         </Style>
         <Style Selector="DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
             <Setter Property="Fill" Value="#0D34E0A1"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#1434E0A1"/>
             <Setter Property="Opacity" Value="1"/>
         </Style>
         <Style Selector="DataGridCell">
@@ -126,7 +142,7 @@
                 <Border Grid.Column="2" Classes="card">
                     <StackPanel Spacing="8">
                         <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Text="POR VENCER" Classes="eyebrow"/>
+                            <TextBlock Text="LOTES POR VENCER" Classes="eyebrow"/>
                             <Border Grid.Column="1" Width="24" Height="24" CornerRadius="7" Background="#24FF6B6B">
                                 <Viewbox Width="14" Height="14">
                                     <Canvas Width="24" Height="24">
@@ -137,7 +153,7 @@
                             </Border>
                         </Grid>
                         <TextBlock Text="{Binding ConteoPorVencer}" Classes="stat"/>
-                        <TextBlock Text="&lt; 90 días" FontSize="11" Foreground="#FF8B8B"/>
+                        <TextBlock Text="vencidos o &lt; 90 días" FontSize="11" Foreground="#FF8B8B"/>
                     </StackPanel>
                 </Border>
 
@@ -171,9 +187,14 @@
                          CaretBrush="#34E0A1" Padding="12" FontSize="14"/>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                    <Button Content="⇩  Ingresar mercadería"
+                            Click="BtnIngresar_Click"
+                            Background="#34E0A1" Foreground="#04160E"
+                            FontWeight="SemiBold" CornerRadius="11" Padding="16,10"/>
                     <Button Content="＋  Registrar producto"
                             Click="BtnRegistrar_Click"
-                            Background="#34E0A1" Foreground="#04160E"
+                            Background="#08FFFFFF" Foreground="#C2CCD6"
+                            BorderBrush="#1FFFFFFF" BorderThickness="1"
                             FontWeight="SemiBold" CornerRadius="11" Padding="16,10"/>
                     <Button Content="⤓  Importar CSV"
                             Click="BtnImportarCSV_Click"
@@ -186,20 +207,34 @@
             <!-- TABLA -->
             <Border Grid.Row="2" CornerRadius="14" BorderBrush="#12FFFFFF" BorderThickness="1"
                     Background="#04FFFFFF" ClipToBounds="True">
-                <DataGrid ItemsSource="{Binding Medicamentos}" AutoGenerateColumns="False" IsReadOnly="True">
+                <DataGrid ItemsSource="{Binding Medicamentos}" AutoGenerateColumns="False" IsReadOnly="True"
+                          SelectionMode="Single" RowDetailsVisibilityMode="VisibleWhenSelected">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Código" Binding="{Binding CodigoBarras}" Width="130"/>
                         <DataGridTextColumn Header="Nombre del medicamento" Binding="{Binding Nombre}" Width="*"/>
-                        <DataGridTextColumn Header="Lote" Binding="{Binding Lote}" Width="110"/>
-                        <DataGridTextColumn Header="Vencimiento"
-                                            Binding="{Binding FechaVencimiento, StringFormat='{}{0:dd/MM/yyyy}'}" Width="130"/>
+                        <DataGridTextColumn Header="Lotes" Binding="{Binding NumeroLotes}" Width="84"/>
+
+                        <!-- Vencimiento más cercano, coloreado por estado -->
+                        <DataGridTemplateColumn Header="Próximo vence" Width="150">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="models:Medicamentos">
+                                    <Border HorizontalAlignment="Left" CornerRadius="999" Padding="10,4" Margin="0,4"
+                                            Background="{Binding EstadoProximo, Converter={StaticResource EstadoLoteColor}}">
+                                        <TextBlock Text="{Binding ProximoVencimiento, Converter={StaticResource FechaCorta}}"
+                                                   FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{Binding EstadoProximo, Converter={StaticResource EstadoLoteColor}, ConverterParameter=fg}"/>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
                         <DataGridTextColumn Header="Precio"
                                             Binding="{Binding Precio, StringFormat='{}{0:C}'}" Width="110"/>
 
                         <!-- Existencias como píldora de color -->
                         <DataGridTemplateColumn Header="Existencia" Width="140">
                             <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
+                                <DataTemplate x:DataType="models:Medicamentos">
                                     <Border HorizontalAlignment="Left" CornerRadius="999" Padding="10,4" Margin="0,4"
                                             Background="{Binding Existencias, Converter={StaticResource StockColor}}">
                                         <TextBlock Text="{Binding Existencias, Converter={StaticResource StockLabel}}"
@@ -213,15 +248,25 @@
                         <DataGridTextColumn Header="Última actualización"
                                             Binding="{Binding FechaUltimaActualizacion, StringFormat='{}{0:dd/MM/yyyy}'}" Width="160"/>
 
-                        <!-- Acciones: editar / eliminar -->
-                        <DataGridTemplateColumn Header="" Width="92">
+                        <!-- Acciones: ingresar / editar / eliminar -->
+                        <DataGridTemplateColumn Header="" Width="120">
                             <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
+                                <DataTemplate x:DataType="models:Medicamentos">
                                     <StackPanel Orientation="Horizontal" Spacing="4"
                                                 HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <Button Click="BtnEditarProducto_Click"
-                                                Width="30" Height="30" Padding="0" Background="Transparent" BorderThickness="0"
-                                                ToolTip.Tip="Editar">
+                                        <Button Classes="fila" Click="BtnIngresarProducto_Click" ToolTip.Tip="Ingresar mercadería de este producto">
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Stroke="#5CE8B4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent"
+                                                          Data="M21 8V17a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 17V8"/>
+                                                    <Path Stroke="#5CE8B4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent"
+                                                          Data="M3.29 7 12 12l8.71-5"/>
+                                                    <Path Stroke="#5CE8B4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent"
+                                                          Data="M12 22V12"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                        </Button>
+                                        <Button Classes="fila" Click="BtnEditarProducto_Click" ToolTip.Tip="Editar">
                                             <Viewbox Width="16" Height="16">
                                                 <Canvas Width="24" Height="24">
                                                     <Path Stroke="#8B96A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent"
@@ -231,9 +276,7 @@
                                                 </Canvas>
                                             </Viewbox>
                                         </Button>
-                                        <Button Click="BtnEliminarProducto_Click"
-                                                Width="30" Height="30" Padding="0" Background="Transparent" BorderThickness="0"
-                                                ToolTip.Tip="Eliminar">
+                                        <Button Classes="fila" Click="BtnEliminarProducto_Click" ToolTip.Tip="Eliminar">
                                             <Viewbox Width="16" Height="16">
                                                 <Canvas Width="24" Height="24">
                                                     <Path Stroke="#FF8B8B" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent"
@@ -248,6 +291,59 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
+
+                    <!-- Detalle desplegable: lotes del producto seleccionado -->
+                    <DataGrid.RowDetailsTemplate>
+                        <DataTemplate x:DataType="models:Medicamentos">
+                            <Border Background="#07FFFFFF" BorderBrush="#12FFFFFF" BorderThickness="0,1,0,0" Padding="40,10,20,12">
+                                <StackPanel Spacing="6">
+                                    <Grid ColumnDefinitions="140,140,110,170,*">
+                                        <TextBlock Grid.Column="0" Text="LOTE" Classes="eyebrow"/>
+                                        <TextBlock Grid.Column="1" Text="VENCIMIENTO" Classes="eyebrow"/>
+                                        <TextBlock Grid.Column="2" Text="EXISTENCIA" Classes="eyebrow"/>
+                                        <TextBlock Grid.Column="3" Text="ESTADO" Classes="eyebrow"/>
+                                    </Grid>
+
+                                    <TextBlock Text="Sin existencias: usa «Ingresar mercadería» para registrar un lote."
+                                               FontSize="12" Foreground="#8B96A4" IsVisible="{Binding SinLotes}"/>
+
+                                    <ItemsControl ItemsSource="{Binding LotesActivos}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="models:Lote">
+                                                <Grid ColumnDefinitions="140,140,110,170,*" Height="34">
+                                                    <TextBlock Grid.Column="0" Text="{Binding NumeroLote}" FontFamily="Consolas, monospace"
+                                                               FontSize="12.5" Foreground="#EEF2F6" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding FechaVencimiento, Converter={StaticResource FechaCorta}}"
+                                                               FontSize="12.5" Foreground="#C2CCD6" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding Existencias, StringFormat='{}{0} u'}"
+                                                               FontFamily="Consolas, monospace" FontSize="12.5" Foreground="#EEF2F6" VerticalAlignment="Center"/>
+                                                    <Border Grid.Column="3" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                            CornerRadius="999" Padding="10,3"
+                                                            Background="{Binding Estado, Converter={StaticResource EstadoLoteColor}}">
+                                                        <TextBlock Text="{Binding EstadoTexto}" FontSize="11" FontWeight="SemiBold"
+                                                                   Foreground="{Binding Estado, Converter={StaticResource EstadoLoteColor}, ConverterParameter=fg}"/>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8"
+                                                                HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                        <Button Content="Editar" Click="BtnEditarLote_Click"
+                                                                FontSize="11.5" Padding="10,4" CornerRadius="8"
+                                                                Background="#08FFFFFF" Foreground="#C2CCD6"
+                                                                BorderBrush="#1FFFFFFF" BorderThickness="1"
+                                                                ToolTip.Tip="Corregir el número de lote o la fecha de vencimiento"/>
+                                                        <Button Content="Dar de baja" Click="BtnDarDeBajaLote_Click"
+                                                                FontSize="11.5" Padding="10,4" CornerRadius="8"
+                                                                Background="#08FFFFFF" Foreground="#FF8B8B"
+                                                                BorderBrush="#2EFF6B6B" BorderThickness="1"
+                                                                ToolTip.Tip="Retira unidades de este lote con su motivo (vencido, dañado…)"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </DataGrid.RowDetailsTemplate>
                 </DataGrid>
             </Border>
 

@@ -9,6 +9,8 @@ namespace FarmaGestion.Data;
 public class InventarioContext : DbContext
 {
     public DbSet<Medicamentos> Medicamentos { get; set; }
+    public DbSet<Lote> Lotes { get; set; }
+    public DbSet<BajaLote> BajasLote { get; set; }
     public DbSet<Despacho> Despachos { get; set; }
     public DbSet<DetalleDespacho> DetallesDespacho { get; set; }
     public DbSet<Usuario> Usuarios { get; set; }
@@ -66,5 +68,33 @@ public class InventarioContext : DbContext
         modelBuilder.Entity<Usuario>()
             .HasIndex(u => u.NombreUsuario)
             .IsUnique();
+
+        // 4. Lotes: un mismo número de lote no se repite dentro de un producto, y al
+        //    eliminar el producto se eliminan sus lotes.
+        modelBuilder.Entity<Lote>(lote =>
+        {
+            lote.HasIndex(l => new { l.MedicamentoId, l.NumeroLote }).IsUnique();
+            lote.HasOne(l => l.Medicamento)
+                .WithMany(m => m.Lotes)
+                .HasForeignKey(l => l.MedicamentoId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // 5. El detalle de despacho recuerda de qué lote salió; el lote no puede borrarse
+        //    mientras tenga ventas registradas (se conserva la trazabilidad).
+        modelBuilder.Entity<DetalleDespacho>()
+            .HasOne(d => d.Lote)
+            .WithMany()
+            .HasForeignKey(d => d.LoteId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // 6. Bajas de lote: se eliminan junto con el producto (que solo puede borrarse si
+        //    nunca tuvo ventas); se consultan por fecha para el reporte.
+        modelBuilder.Entity<BajaLote>(baja =>
+        {
+            baja.HasIndex(b => b.Fecha);
+            baja.HasOne(b => b.Lote).WithMany().HasForeignKey(b => b.LoteId).OnDelete(DeleteBehavior.Cascade);
+            baja.HasOne(b => b.Medicamento).WithMany().HasForeignKey(b => b.MedicamentoId).OnDelete(DeleteBehavior.Cascade);
+        });
     }   
 }

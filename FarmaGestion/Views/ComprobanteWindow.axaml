@@ -111,13 +111,16 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:LineaComprobanteItem">
                                 <Border BorderBrush="#0CFFFFFF" BorderThickness="0,0,0,1">
-                                    <Grid ColumnDefinitions="110,*,54,92,100" Height="44">
+                                    <Grid ColumnDefinitions="110,*,54,92,100" MinHeight="44">
                                         <TextBlock Grid.Column="0" Text="{Binding Codigo}" Margin="16,0"
                                                    FontFamily="Consolas, monospace" FontSize="12" Foreground="#8B96A4"
                                                    VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding Nombre}" FontSize="13.5"
-                                                   Foreground="#EEF2F6" VerticalAlignment="Center"
-                                                   TextTrimming="CharacterEllipsis"/>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1" Margin="0,6">
+                                            <TextBlock Text="{Binding Nombre}" FontSize="13.5"
+                                                       Foreground="#EEF2F6" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding LoteTexto}" IsVisible="{Binding TieneLote}"
+                                                       FontFamily="Consolas, monospace" FontSize="11" Foreground="#8B96A4"/>
+                                        </StackPanel>
                                         <TextBlock Grid.Column="2" Text="{Binding CantidadTexto}" HorizontalAlignment="Right"
                                                    FontFamily="Consolas, monospace" FontSize="13" Foreground="#C2CCD6"
                                                    VerticalAlignment="Center"/>

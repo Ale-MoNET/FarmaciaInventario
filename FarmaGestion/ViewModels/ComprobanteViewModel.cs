@@ -13,6 +13,8 @@ public class LineaComprobanteItem
     public string CantidadTexto { get; init; } = string.Empty;
     public string PrecioTexto { get; init; } = string.Empty;
     public string SubtotalTexto { get; init; } = string.Empty;
+    public string LoteTexto { get; init; } = string.Empty;
+    public bool TieneLote => LoteTexto.Length > 0;
 }
 
 /// <summary>
@@ -39,7 +41,8 @@ public partial class ComprobanteViewModel : ObservableObject
                 Nombre = linea.Nombre,
                 CantidadTexto = linea.Cantidad.ToString(),
                 PrecioTexto = linea.PrecioUnitario.ToString("C"),
-                SubtotalTexto = linea.Subtotal.ToString("C")
+                SubtotalTexto = linea.Subtotal.ToString("C"),
+                LoteTexto = string.IsNullOrWhiteSpace(linea.Lote) ? string.Empty : $"Lote {linea.Lote}"
             });
         }
     }

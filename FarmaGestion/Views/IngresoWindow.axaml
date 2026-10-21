@@ -1,0 +1,115 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:FarmaGestion.ViewModels"
+        x:Class="FarmaGestion.Views.IngresoWindow"
+        x:DataType="vm:IngresoMercaderiaViewModel"
+        Title="Ingresar mercadería"
+        Icon="/Assets/farma-icon.png"
+        Width="470" SizeToContent="Height" MaxHeight="780"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="#0A0D13">
+
+    <Window.Styles>
+        <Style Selector="TextBlock.label">
+            <Setter Property="FontFamily" Value="Consolas, 'Courier New', monospace"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="#8B96A4"/>
+        </Style>
+        <Style Selector="TextBox.field">
+            <Setter Property="Background" Value="#0CFFFFFF"/>
+            <Setter Property="Foreground" Value="#EEF2F6"/>
+            <Setter Property="BorderBrush" Value="#1AFFFFFF"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="CaretBrush" Value="#34E0A1"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="FontSize" Value="15"/>
+        </Style>
+        <Style Selector="TextBox.field:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="#34E0A1"/>
+        </Style>
+    </Window.Styles>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28" Spacing="16">
+
+            <!-- Cabecera -->
+            <StackPanel Orientation="Horizontal" Spacing="13" Margin="0,0,0,6">
+                <Border Width="42" Height="42" CornerRadius="12" Background="#34E0A1"
+                        BoxShadow="0 4 14 0 #5934E0A1">
+                    <TextBlock Text="⇩" FontSize="24" FontWeight="Bold" Foreground="#04160E"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="GESTIÓN DE INVENTARIO" Classes="label"/>
+                    <TextBlock Text="Ingreso de mercadería" FontSize="18" FontWeight="Bold" Foreground="#EEF2F6"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Producto -->
+            <StackPanel Spacing="7">
+                <TextBlock Text="CÓDIGO DE BARRAS" Classes="label"/>
+                <TextBox x:Name="TxtCodigo" Classes="field" Text="{Binding CodigoBarras}"
+                         KeyDown="TxtCodigo_KeyDown"
+                         PlaceholderText="Escanea el código y presiona Enter"/>
+                <Border Background="#1434E0A1" BorderBrush="#4034E0A1" BorderThickness="1" CornerRadius="10"
+                        Padding="12,9" IsVisible="{Binding ProductoEncontrado}">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{Binding NombreProducto}" FontSize="15" FontWeight="SemiBold" Foreground="#5CE8B4"/>
+                        <TextBlock Text="{Binding ResumenProducto}" FontSize="12" Foreground="#C2CCD6"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Lote -->
+            <Grid ColumnDefinitions="*, 16, *">
+                <StackPanel Grid.Column="0" Spacing="7">
+                    <TextBlock Text="LOTE" Classes="label"/>
+                    <TextBox x:Name="TxtLote" Classes="field" Text="{Binding NumeroLote}" PlaceholderText="Ej. L-1042"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Spacing="7">
+                    <TextBlock Text="FECHA DE VENCIMIENTO" Classes="label"/>
+                    <CalendarDatePicker x:Name="DpVencimiento" SelectedDate="{Binding FechaVencimiento}"
+                                        HorizontalAlignment="Stretch" FontSize="15"
+                                        PlaceholderText="dd/mm/aaaa"/>
+                </StackPanel>
+            </Grid>
+
+            <StackPanel Spacing="7">
+                <TextBlock Text="CANTIDAD QUE ENTRA" Classes="label"/>
+                <TextBox x:Name="TxtCantidad" Classes="field" Text="{Binding Cantidad}" Width="160"
+                         HorizontalAlignment="Left" PlaceholderText="0">
+                    <TextBox.KeyBindings>
+                        <KeyBinding Gesture="Enter" Command="{Binding RegistrarCommand}"/>
+                    </TextBox.KeyBindings>
+                </TextBox>
+                <TextBlock Text="Si el lote ya existe para este producto, la cantidad se suma a sus existencias."
+                           FontSize="12" Foreground="#8B96A4" TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <!-- Mensajes -->
+            <Border Background="#24FF6B6B" BorderBrush="#40FF6B6B" BorderThickness="1"
+                    CornerRadius="10" Padding="12" IsVisible="{Binding MostrarError}">
+                <TextBlock Text="{Binding Mensaje}" Foreground="#FF8B8B" TextWrapping="Wrap"/>
+            </Border>
+            <Border Background="#1434E0A1" BorderBrush="#4034E0A1" BorderThickness="1"
+                    CornerRadius="10" Padding="12" IsVisible="{Binding MostrarExito}">
+                <TextBlock Text="{Binding Mensaje}" Foreground="#5CE8B4" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Acciones -->
+            <Grid ColumnDefinitions="*,12,Auto" Margin="0,6,0,0">
+                <Button Grid.Column="0" Content="Registrar ingreso"
+                        Command="{Binding RegistrarCommand}"
+                        Background="#34E0A1" Foreground="#04160E"
+                        FontSize="15" FontWeight="Bold"
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        CornerRadius="12" Padding="15"/>
+                <Button Grid.Column="2" Content="Cerrar" Click="Cerrar_Click"
+                        Background="#08FFFFFF" Foreground="#C2CCD6"
+                        BorderBrush="#1FFFFFFF" BorderThickness="1"
+                        FontSize="14" CornerRadius="12" Padding="18,15"/>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</Window>

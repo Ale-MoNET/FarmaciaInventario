@@ -1,0 +1,81 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:FarmaGestion.ViewModels"
+        x:Class="FarmaGestion.Views.EditarLoteWindow"
+        x:DataType="vm:EditarLoteViewModel"
+        Title="Editar lote"
+        Icon="/Assets/farma-icon.png"
+        Width="440" SizeToContent="Height" MaxHeight="700"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="#0A0D13">
+
+    <Window.Styles>
+        <Style Selector="TextBlock.label">
+            <Setter Property="FontFamily" Value="Consolas, 'Courier New', monospace"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="#8B96A4"/>
+        </Style>
+        <Style Selector="TextBox.field">
+            <Setter Property="Background" Value="#0CFFFFFF"/>
+            <Setter Property="Foreground" Value="#EEF2F6"/>
+            <Setter Property="BorderBrush" Value="#1AFFFFFF"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="CaretBrush" Value="#34E0A1"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="FontSize" Value="15"/>
+        </Style>
+        <Style Selector="TextBox.field:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="#34E0A1"/>
+        </Style>
+    </Window.Styles>
+
+    <StackPanel Margin="28" Spacing="16">
+
+        <StackPanel Orientation="Horizontal" Spacing="13" Margin="0,0,0,6">
+            <Border Width="42" Height="42" CornerRadius="12" Background="#34E0A1">
+                <TextBlock Text="✎" FontSize="22" FontWeight="Bold" Foreground="#04160E"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <StackPanel VerticalAlignment="Center" Spacing="2">
+                <TextBlock Text="CORREGIR DATOS DEL LOTE" Classes="label"/>
+                <TextBlock Text="Editar lote" FontSize="18" FontWeight="Bold" Foreground="#EEF2F6"/>
+            </StackPanel>
+        </StackPanel>
+
+        <TextBlock Text="{Binding Encabezado}" FontSize="13" Foreground="#C2CCD6" TextWrapping="Wrap"/>
+
+        <StackPanel Spacing="7">
+            <TextBlock Text="NÚMERO DE LOTE" Classes="label"/>
+            <TextBox x:Name="TxtLote" Classes="field" Text="{Binding NumeroLote}"/>
+        </StackPanel>
+
+        <StackPanel Spacing="7">
+            <TextBlock Text="FECHA DE VENCIMIENTO" Classes="label"/>
+            <CalendarDatePicker SelectedDate="{Binding FechaVencimiento}"
+                                HorizontalAlignment="Stretch" FontSize="15"
+                                PlaceholderText="dd/mm/aaaa"/>
+        </StackPanel>
+
+        <TextBlock Text="Las existencias no se cambian aquí: usa «Ingresar mercadería» para sumar y «Dar de baja» para retirar."
+                   FontSize="12" Foreground="#8B96A4" TextWrapping="Wrap"/>
+
+        <Border Background="#24FF6B6B" BorderBrush="#40FF6B6B" BorderThickness="1"
+                CornerRadius="10" Padding="12" IsVisible="{Binding MostrarError}">
+            <TextBlock Text="{Binding MensajeError}" Foreground="#FF8B8B" TextWrapping="Wrap"/>
+        </Border>
+
+        <Grid ColumnDefinitions="*,12,Auto" Margin="0,6,0,0">
+            <Button Grid.Column="0" Content="Guardar cambios"
+                    Command="{Binding GuardarCommand}"
+                    Background="#34E0A1" Foreground="#04160E"
+                    FontSize="15" FontWeight="Bold"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    CornerRadius="12" Padding="15"/>
+            <Button Grid.Column="2" Content="Cancelar" Click="Cancelar_Click"
+                    Background="#08FFFFFF" Foreground="#C2CCD6"
+                    BorderBrush="#1FFFFFFF" BorderThickness="1"
+                    FontSize="14" CornerRadius="12" Padding="18,15"/>
+        </Grid>
+    </StackPanel>
+</Window>

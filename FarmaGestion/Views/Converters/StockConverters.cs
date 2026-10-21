@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
+using FarmaGestion.Models;
 
 namespace FarmaGestion.Views.Converters;
 
@@ -22,9 +23,9 @@ public class StockColorConverter : IValueConverter
         // (fondo, texto)
         (string bg, string fg) = existencias switch
         {
-            0 => ("#24FF6B6B", "#FF8B8B"),      // agotado
-            < 15 => ("#24FFB03C", "#FFC061"),   // bajo
-            _ => ("#1F34E0A1", "#5CE8B4")        // normal
+            <= 0 => ("#24FF6B6B", "#FF8B8B"),                              // agotado
+            <= Medicamentos.UmbralBajoStock => ("#24FFB03C", "#FFC061"),   // bajo
+            _ => ("#1F34E0A1", "#5CE8B4")                                   // normal
         };
 
         return SolidColorBrush.Parse(foreground ? fg : bg);
@@ -46,8 +47,8 @@ public class StockLabelConverter : IValueConverter
         int n = value is int i ? i : 0;
         return n switch
         {
-            0 => "Agotado",
-            < 15 => $"{n} u · bajo",
+            <= 0 => "Agotado",
+            <= Medicamentos.UmbralBajoStock => $"{n} u · bajo",
             _ => $"{n} u"
         };
     }

@@ -42,7 +42,8 @@ echo "🔨 Publicando FarmaGestión v$VERSION ($RID)…"
   -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none
 
 echo "📦 Armando paquete $PKG…"
-rm -rf "$OUT"; mkdir -p "$PKG"
+# Solo se reemplaza el paquete de esta versión; los de versiones anteriores se conservan (vuelta atrás).
+rm -rf "$PKG" "$OUT/$NOMBRE.zip" "$OUT/$NOMBRE.zip.sha256"; mkdir -p "$PKG"
 cp "$PUBDIR/FarmaGestion.exe" "$PKG/"
 # appsettings.json va junto al exe (permite configurar una base de datos compartida).
 cp "FarmaGestion/appsettings.json" "$PKG/"

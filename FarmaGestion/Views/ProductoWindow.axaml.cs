@@ -1,4 +1,7 @@
+using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using FarmaGestion.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,8 +27,31 @@ public partial class ProductoWindow : Window
 
         viewModel.OnGuardadoExitoso = () => this.Close();
 
+        // El código ya existía: el usuario quiere sumar existencias, no editar el producto.
+        viewModel.OnIrAIngresoMercaderia = async codigo =>
+        {
+            var ingreso = new IngresoWindow(codigo);
+            await ingreso.ShowDialog(this);
+            Close();
+        };
+
         DataContext = viewModel;
 
         this.Opened += (s, e) => TxtCodigoBarras.Focus();
     }
+
+    /// <summary>Enter en el código (el lector de barras lo envía solo): comprobar y pasar al nombre.</summary>
+    private async void TxtCodigoBarras_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Return) return;
+        e.Handled = true;
+
+        await ComprobarCodigoAsync();
+        TxtNombre.Focus();
+    }
+
+    private async void TxtCodigoBarras_LostFocus(object? sender, RoutedEventArgs e) => await ComprobarCodigoAsync();
+
+    private Task ComprobarCodigoAsync()
+        => DataContext is ProductoViewModel vm ? vm.ComprobarCodigoExistenteAsync() : Task.CompletedTask;
 }
