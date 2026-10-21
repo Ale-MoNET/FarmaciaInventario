@@ -25,6 +25,10 @@ public partial class ProductoViewModel : ObservableObject
     [ObservableProperty] private string _mensajeError = string.Empty;
     [ObservableProperty] private bool _mostrarError;
 
+    // Aviso cuando el código escaneado ya pertenece a un producto registrado.
+    [ObservableProperty] private string _aviso = string.Empty;
+    [ObservableProperty] private bool _mostrarAviso;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(MostrarPrimerLote))]
     private bool _esEdicion;
@@ -39,6 +43,9 @@ public partial class ProductoViewModel : ObservableObject
 
     public Action? OnGuardadoExitoso;
 
+    /// <summary>La vista abre "Ingresar mercadería" con el código cuando el producto ya existe.</summary>
+    public Action<string>? OnIrAIngresoMercaderia;
+
     public ProductoViewModel(IMedicamentoRepository medicamentoRepo)
     {
         _medicamentoRepo = medicamentoRepo;
@@ -49,7 +56,11 @@ public partial class ProductoViewModel : ObservableObject
     {
         var m = await _medicamentoRepo.ObtenerPorIdAsync(id);
         if (m == null) return;
+        CargarDesde(m);
+    }
 
+    private void CargarDesde(Medicamentos m)
+    {
         _medicamentoId = m.Id;
         CodigoBarras = m.CodigoBarras;
         Nombre = m.Nombre;
@@ -59,6 +70,57 @@ public partial class ProductoViewModel : ObservableObject
         TituloVentana = "Editar medicamento";
         TextoBoton = "Guardar cambios";
     }
+
+    /// <summary>
+    /// Al terminar de escribir o escanear el código: si ya pertenece a un producto, el
+    /// formulario se llena con sus datos y pasa a modo edición (así no se crean duplicados
+    /// ni se pierde lo escaneado). Devuelve true si cambió a un producto existente.
+    /// </summary>
+    public async Task<bool> ComprobarCodigoExistenteAsync()
+    {
+        var codigo = CodigoBarras.Trim();
+        if (codigo.Length == 0) return false;
+
+        Medicamentos? existente;
+        try
+        {
+            existente = await _medicamentoRepo.ObtenerPorCodigoAsync(codigo);
+        }
+        catch (Exception ex)
+        {
+            LoggerService.Error("Error al comprobar el código de barras", ex);
+            return false;
+        }
+
+        if (existente == null)
+        {
+            MostrarAviso = false;
+            return false;
+        }
+
+        if (EsEdicion)
+        {
+            if (existente.Id == _medicamentoId) return false;
+            MostrarErrorValidacion($"❌ El código '{codigo}' ya pertenece a «{existente.Nombre}».");
+            return false;
+        }
+
+        MostrarExistente(existente);
+        return true;
+    }
+
+    private void MostrarExistente(Medicamentos existente)
+    {
+        CargarDesde(existente);
+        MostrarError = false;
+        MensajeError = string.Empty;
+        Aviso = $"Este código ya está registrado como «{existente.Nombre}» ({existente.Existencias} u en existencia). " +
+                "Aquí puedes corregir su nombre o precio; para sumar existencias usa «Ingresar mercadería».";
+        MostrarAviso = true;
+    }
+
+    [RelayCommand]
+    private void IrAIngresoMercaderia() => OnIrAIngresoMercaderia?.Invoke(CodigoBarras.Trim());
 
     /// <summary>Pre-rellena el código de barras para crear un nuevo medicamento desde escaneo.</summary>
     public void InicializarConCodigoEscaneado(string codigoBarras)
@@ -147,10 +209,20 @@ public partial class ProductoViewModel : ObservableObject
 
         try
         {
-            // 4. Validación de unicidad del código (excluyendo el propio en edición)
-            if (await _medicamentoRepo.ExisteCodigoAsync(codigo, EsEdicion ? _medicamentoId : null))
+            // 4. Unicidad del código. Al crear, si ya existe se carga ese producto en vez de
+            //    duplicarlo; al editar, no se permite tomar el código de otro producto.
+            if (!EsEdicion)
             {
-                MostrarErrorValidacion($"❌ Ya existe un medicamento con el código '{codigo}'.");
+                var existente = await _medicamentoRepo.ObtenerPorCodigoAsync(codigo);
+                if (existente != null)
+                {
+                    MostrarExistente(existente);
+                    return;
+                }
+            }
+            else if (await _medicamentoRepo.ExisteCodigoAsync(codigo, _medicamentoId))
+            {
+                MostrarErrorValidacion($"❌ Ya existe otro medicamento con el código '{codigo}'.");
                 return;
             }
 

@@ -49,12 +49,25 @@
             <StackPanel Spacing="7">
                 <TextBlock Text="CÓDIGO DE BARRAS" Classes="label"/>
                 <TextBox x:Name="TxtCodigoBarras" Classes="field" Text="{Binding CodigoBarras}"
+                         KeyDown="TxtCodigoBarras_KeyDown" LostFocus="TxtCodigoBarras_LostFocus"
                          PlaceholderText="Escanea o escribe el código"/>
             </StackPanel>
 
+            <!-- El código ya existe: se cargó ese producto en modo edición -->
+            <Border Background="#24FFB03C" BorderBrush="#40FFB03C" BorderThickness="1"
+                    CornerRadius="10" Padding="12" IsVisible="{Binding MostrarAviso}">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="{Binding Aviso}" Foreground="#FFC061" FontSize="12.5" TextWrapping="Wrap"/>
+                    <Button Content="⇩  Ingresar mercadería de este producto"
+                            Command="{Binding IrAIngresoMercaderiaCommand}"
+                            HorizontalAlignment="Left" Background="#34E0A1" Foreground="#04160E"
+                            FontWeight="SemiBold" FontSize="12.5" CornerRadius="9" Padding="12,7"/>
+                </StackPanel>
+            </Border>
+
             <StackPanel Spacing="7">
                 <TextBlock Text="NOMBRE DEL MEDICAMENTO Y MILIGRAMOS" Classes="label"/>
-                <TextBox Classes="field" Text="{Binding Nombre}" PlaceholderText="Ej. Paracetamol 500mg"/>
+                <TextBox x:Name="TxtNombre" Classes="field" Text="{Binding Nombre}" PlaceholderText="Ej. Paracetamol 500mg"/>
             </StackPanel>
 
             <StackPanel Spacing="7">
