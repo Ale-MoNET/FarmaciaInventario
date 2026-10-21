@@ -1,0 +1,168 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:FarmaGestion.ViewModels"
+        xmlns:ctrl="clr-namespace:FarmaGestion.Views.Controls"
+        x:Class="FarmaGestion.Views.LoginWindow"
+        x:DataType="vm:LoginViewModel"
+        Title="FarmaGestión - Iniciar Sesión"
+        Icon="/Assets/farma-icon.png"
+        Width="560" Height="640"
+        MinWidth="420" MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        Background="#0A0C10">
+
+    <Window.Styles>
+        <!-- Campos: fondo, borde y glow de foco con el acento -->
+        <Style Selector="TextBox.field">
+            <Setter Property="Background" Value="#0CFFFFFF"/>
+            <Setter Property="Foreground" Value="#EEF2F6"/>
+            <Setter Property="BorderBrush" Value="#1AFFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="CaretBrush" Value="#34E0A1"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="FontSize" Value="15"/>
+        </Style>
+        <Style Selector="TextBox.field:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="#3334E0A1"/>
+        </Style>
+        <Style Selector="TextBox.field:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="#34E0A1"/>
+        </Style>
+
+        <!-- Botón principal -->
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="#34E0A1"/>
+            <Setter Property="Foreground" Value="#04160E"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Height" Value="50"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#5FE9B9"/>
+            <Setter Property="TextBlock.Foreground" Value="#04160E"/>
+        </Style>
+
+        <!-- Enlace "mostrar / ocultar" -->
+        <Style Selector="Button.link">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#34E0A1"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="Button.link:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
+        <!-- Etiquetas tipo "eyebrow" (monoespaciadas, mayúsculas) -->
+        <Style Selector="TextBlock.eyebrow">
+            <Setter Property="FontFamily" Value="Consolas, 'Courier New', monospace"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="#8B96A4"/>
+        </Style>
+    </Window.Styles>
+
+    <Panel>
+        <!-- Fondo animado (reflector que respira + rejilla de cruces que titilan) -->
+        <ctrl:AnimatedBackground/>
+
+        <!-- Viñeta inferior para dar profundidad -->
+        <Rectangle IsHitTestVisible="False">
+            <Rectangle.Fill>
+                <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%" RadiusX="75%" RadiusY="75%">
+                    <GradientStop Color="#000A0C10" Offset="0.35"/>
+                    <GradientStop Color="#8C000000" Offset="1"/>
+                </RadialGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <!-- Tarjeta -->
+            <Border MaxWidth="420"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Margin="28"
+                    Background="#B3141A22"
+                    BorderBrush="#1AFFFFFF" BorderThickness="1"
+                    CornerRadius="22" Padding="38,40,38,30"
+                    BoxShadow="0 40 90 -30 #B3000000">
+                <StackPanel Spacing="0">
+
+                    <!-- Encabezado con logo -->
+                    <StackPanel Orientation="Horizontal" Spacing="13" Margin="0,0,0,30">
+                        <Border Width="46" Height="46" CornerRadius="13" Background="#34E0A1"
+                                BoxShadow="0 6 20 0 #3834E0A1">
+                            <TextBlock Text="+" FontSize="30" FontWeight="Bold"
+                                       Foreground="#04160E"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center" Spacing="3">
+                            <TextBlock Text="SISTEMA DE INVENTARIO" Classes="eyebrow" FontSize="10"/>
+                            <TextBlock Text="FarmaGestión" FontSize="22" FontWeight="Bold"
+                                       Foreground="#EEF2F6"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Título -->
+                    <TextBlock Text="Bienvenido de nuevo" FontSize="25" FontWeight="SemiBold"
+                               Foreground="#EEF2F6" Margin="0,0,0,4"/>
+                    <TextBlock Text="Ingresa tus credenciales para acceder al panel de inventario."
+                               FontSize="14" Foreground="#8B96A4" TextWrapping="Wrap"
+                               Margin="0,0,0,26"/>
+
+                    <!-- Campo Usuario -->
+                    <StackPanel Spacing="8" Margin="0,0,0,16">
+                        <TextBlock Text="USUARIO" Classes="eyebrow" FontSize="10"/>
+                        <TextBox x:Name="TxtUsuario" Classes="field"
+                                 Text="{Binding NombreUsuario}"
+                                 PlaceholderText="nombre.apellido"/>
+                    </StackPanel>
+
+                    <!-- Campo Contraseña -->
+                    <StackPanel Spacing="8" Margin="0,0,0,16">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="CONTRASEÑA" Classes="eyebrow" FontSize="10"/>
+                            <Button Grid.Column="1" x:Name="BtnTogglePw" Classes="link"
+                                    Content="MOSTRAR" Click="TogglePw_Click"/>
+                        </Grid>
+                        <TextBox x:Name="TxtPassword" Classes="field"
+                                 Text="{Binding Password}"
+                                 PasswordChar="●"
+                                 PlaceholderText="••••••••"/>
+                    </StackPanel>
+
+                    <!-- Mensaje de error -->
+                    <StackPanel Orientation="Horizontal" Spacing="8"
+                                IsVisible="{Binding MostrarError}" Margin="0,0,0,4">
+                        <Ellipse Width="5" Height="5" Fill="#FF6B6B" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding MensajeError}" Foreground="#FF6B6B"
+                                   FontSize="13" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <!-- Botón Iniciar Sesión -->
+                    <Button Classes="primary"
+                            Command="{Binding IniciarSesionCommand}"
+                            IsDefault="True" Margin="0,8,0,0"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                        <TextBlock Text="Iniciar sesión" HorizontalAlignment="Center"/>
+                    </Button>
+
+                    <!-- Footer -->
+                    <Border BorderBrush="#1AFFFFFF" BorderThickness="0,1,0,0"
+                            Margin="0,24,0,0" Padding="0,18,0,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Ellipse Width="6" Height="6" Fill="#34E0A1" VerticalAlignment="Center"/>
+                            <TextBlock Text="Acceso restringido · Personal autorizado"
+                                       Classes="eyebrow" FontSize="10"/>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+    </Panel>
+</Window>

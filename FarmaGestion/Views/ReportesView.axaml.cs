@@ -1,7 +1,6 @@
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
 using FarmaGestion.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FarmaGestion.Views;
 
@@ -10,6 +9,6 @@ public partial class ReportesView : UserControl
     public ReportesView()
     {
         InitializeComponent();
-        DataContext = new ReportesViewModel();
+        DataContext = App.Services.GetRequiredService<ReportesViewModel>();
     }
 }

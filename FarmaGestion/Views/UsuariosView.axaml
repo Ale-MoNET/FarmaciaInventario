@@ -1,0 +1,253 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:FarmaGestion.ViewModels"
+             xmlns:conv="clr-namespace:FarmaGestion.Views.Converters"
+             x:Class="FarmaGestion.Views.UsuariosView"
+             x:DataType="vm:UsuariosViewModel"
+             Background="#0A0D13">
+
+    <UserControl.Resources>
+        <conv:StringToBrushConverter x:Key="StrBrush"/>
+        <conv:RoleFilterBgConverter x:Key="FiltroBg"/>
+        <conv:RoleFilterFgConverter x:Key="FiltroFg"/>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.eyebrow">
+            <Setter Property="FontFamily" Value="Consolas, 'Courier New', monospace"/>
+            <Setter Property="FontSize" Value="9.5"/>
+            <Setter Property="Foreground" Value="#8B96A4"/>
+        </Style>
+        <Style Selector="Path.svg">
+            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="StrokeLineCap" Value="Round"/>
+            <Setter Property="StrokeJoin" Value="Round"/>
+            <Setter Property="Fill" Value="Transparent"/>
+        </Style>
+        <Style Selector="Line.svg">
+            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="StrokeLineCap" Value="Round"/>
+        </Style>
+        <Style Selector="Ellipse.svg">
+            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="Fill" Value="Transparent"/>
+        </Style>
+        <!-- Botón de filtro por rol -->
+        <Style Selector="Button.rolefilter">
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*" Margin="22">
+
+        <!-- KPIs -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,*,*" Margin="0,0,0,16">
+            <Grid.Styles>
+                <Style Selector="Border.kpi">
+                    <Setter Property="Background" Value="#0AFFFFFF"/>
+                    <Setter Property="BorderBrush" Value="#12FFFFFF"/>
+                    <Setter Property="BorderThickness" Value="1"/>
+                    <Setter Property="CornerRadius" Value="14"/>
+                    <Setter Property="Padding" Value="18,15"/>
+                    <Setter Property="Margin" Value="0,0,14,0"/>
+                </Style>
+                <Style Selector="TextBlock.kpival">
+                    <Setter Property="FontSize" Value="24"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                    <Setter Property="Foreground" Value="#EEF2F6"/>
+                </Style>
+            </Grid.Styles>
+
+            <Border Grid.Column="0" Classes="kpi">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="TOTAL USUARIOS" Classes="eyebrow"/>
+                    <TextBlock Text="{Binding Total}" Classes="kpival"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Classes="kpi">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="ACTIVOS" Classes="eyebrow"/>
+                    <TextBlock Text="{Binding Activos}" Classes="kpival" Foreground="#5CE8B4"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Classes="kpi" Margin="0">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="ADMINISTRADORES" Classes="eyebrow"/>
+                    <TextBlock Text="{Binding Administradores}" Classes="kpival"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Toolbar -->
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,*,Auto" Margin="0,0,0,16">
+            <!-- Buscador -->
+            <Border Grid.Column="0" Width="300" CornerRadius="11" BorderBrush="#1AFFFFFF" BorderThickness="1"
+                    Background="#0AFFFFFF" Padding="14,0" Margin="0,0,12,0">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Viewbox Width="16" Height="16" Margin="0,0,10,0" VerticalAlignment="Center">
+                        <Canvas Width="24" Height="24">
+                            <Ellipse Classes="svg" Stroke="#8B96A4" Canvas.Left="3" Canvas.Top="3" Width="16" Height="16"/>
+                            <Line Classes="svg" Stroke="#8B96A4" StartPoint="21,21" EndPoint="16.65,16.65"/>
+                        </Canvas>
+                    </Viewbox>
+                    <TextBox Grid.Column="1" Text="{Binding UsrQuery}" PlaceholderText="Buscar usuario…"
+                             Background="Transparent" BorderThickness="0" Foreground="#EEF2F6"
+                             CaretBrush="#34E0A1" FontSize="14" Padding="0,12" VerticalContentAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- Filtros por rol -->
+            <Border Grid.Column="1" CornerRadius="11" BorderBrush="#14FFFFFF" BorderThickness="1"
+                    Background="#08FFFFFF" Padding="4">
+                <StackPanel Orientation="Horizontal" Spacing="2">
+                    <Button Classes="rolefilter" Content="Todos"
+                            Command="{Binding FiltrarRolCommand}" CommandParameter="Todos"
+                            Background="{Binding RolFiltro, Converter={StaticResource FiltroBg}, ConverterParameter=Todos}"
+                            Foreground="{Binding RolFiltro, Converter={StaticResource FiltroFg}, ConverterParameter=Todos}"/>
+                    <Button Classes="rolefilter" Content="Admin"
+                            Command="{Binding FiltrarRolCommand}" CommandParameter="Admin"
+                            Background="{Binding RolFiltro, Converter={StaticResource FiltroBg}, ConverterParameter=Admin}"
+                            Foreground="{Binding RolFiltro, Converter={StaticResource FiltroFg}, ConverterParameter=Admin}"/>
+                    <Button Classes="rolefilter" Content="Empleado"
+                            Command="{Binding FiltrarRolCommand}" CommandParameter="Empleado"
+                            Background="{Binding RolFiltro, Converter={StaticResource FiltroBg}, ConverterParameter=Empleado}"
+                            Foreground="{Binding RolFiltro, Converter={StaticResource FiltroFg}, ConverterParameter=Empleado}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Nuevo usuario -->
+            <Button Grid.Column="3" Click="BtnNuevoUsuario_Click"
+                    Background="#34E0A1" Foreground="#04160E" CornerRadius="11" Padding="16,10"
+                    FontWeight="SemiBold" FontSize="13.5">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Viewbox Width="16" Height="16">
+                        <Canvas Width="24" Height="24">
+                            <Path Classes="svg" Stroke="#04160E" Data="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                            <Ellipse Classes="svg" Stroke="#04160E" Canvas.Left="5" Canvas.Top="3" Width="8" Height="8"/>
+                            <Line Classes="svg" Stroke="#04160E" StartPoint="19,8" EndPoint="19,14"/>
+                            <Line Classes="svg" Stroke="#04160E" StartPoint="22,11" EndPoint="16,11"/>
+                        </Canvas>
+                    </Viewbox>
+                    <TextBlock Text="Nuevo usuario" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- Tabla -->
+        <Border Grid.Row="2" CornerRadius="14" BorderBrush="#12FFFFFF" BorderThickness="1"
+                Background="#04FFFFFF" ClipToBounds="True">
+            <Grid RowDefinitions="Auto,*,Auto">
+                <!-- Encabezado -->
+                <Grid Grid.Row="0" ColumnDefinitions="*,150,130,170,130" Background="#08FFFFFF">
+                    <TextBlock Grid.Column="0" Text="USUARIO" Classes="eyebrow" Margin="20,13"/>
+                    <TextBlock Grid.Column="1" Text="ROL" Classes="eyebrow" Margin="0,13"/>
+                    <TextBlock Grid.Column="2" Text="ESTADO" Classes="eyebrow" Margin="0,13"/>
+                    <TextBlock Grid.Column="3" Text="FECHA CREACIÓN" Classes="eyebrow" Margin="0,13"/>
+                    <TextBlock Grid.Column="4" Text="ACCIONES" Classes="eyebrow" Margin="0,13" HorizontalAlignment="Center"/>
+                </Grid>
+
+                <!-- Filas -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <Panel>
+                        <ItemsControl ItemsSource="{Binding Usuarios}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:UsuarioListItem">
+                                    <Border BorderBrush="#0CFFFFFF" BorderThickness="0,0,0,1">
+                                        <Grid ColumnDefinitions="*,150,130,170,130" Height="56">
+                                            <!-- Usuario con avatar -->
+                                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" Margin="20,0" VerticalAlignment="Center">
+                                                <Border Width="34" Height="34" CornerRadius="17"
+                                                        Background="{Binding AvatarBg, Converter={StaticResource StrBrush}}">
+                                                    <TextBlock Text="{Binding Iniciales}" FontWeight="Bold" FontSize="13" Foreground="#04160E"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding NombreUsuario}" FontSize="14" FontWeight="Medium"
+                                                           Foreground="#EEF2F6" VerticalAlignment="Center"/>
+                                            </StackPanel>
+
+                                            <!-- Rol (pill) -->
+                                            <Border Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                    CornerRadius="999" Padding="11,4"
+                                                    Background="{Binding RolBg, Converter={StaticResource StrBrush}}">
+                                                <TextBlock Text="{Binding Rol}" FontFamily="Consolas, monospace" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="{Binding RolColor, Converter={StaticResource StrBrush}}"/>
+                                            </Border>
+
+                                            <!-- Estado -->
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                                <Ellipse Width="7" Height="7" VerticalAlignment="Center"
+                                                         Fill="{Binding EstadoDot, Converter={StaticResource StrBrush}}"/>
+                                                <TextBlock Text="{Binding EstadoTexto}" FontSize="13"
+                                                           Foreground="{Binding EstadoColor, Converter={StaticResource StrBrush}}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+
+                                            <!-- Fecha -->
+                                            <TextBlock Grid.Column="3" Text="{Binding FechaTexto}" FontSize="12.5"
+                                                       Foreground="#8B96A4" VerticalAlignment="Center"/>
+
+                                            <!-- Acciones: editar / activar-desactivar / eliminar -->
+                                            <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="4"
+                                                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Button Click="BtnEditar_Click"
+                                                        Width="30" Height="30" Padding="0" Background="Transparent" BorderThickness="0"
+                                                        ToolTip.Tip="Editar">
+                                                    <Viewbox Width="16" Height="16">
+                                                        <Canvas Width="24" Height="24">
+                                                            <Path Classes="svg" Stroke="#8B96A4" Data="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                                            <Path Classes="svg" Stroke="#8B96A4" Data="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                                        </Canvas>
+                                                    </Viewbox>
+                                                </Button>
+                                                <Button Click="BtnToggleActivo_Click"
+                                                        Width="30" Height="30" Padding="0" Background="Transparent" BorderThickness="0"
+                                                        ToolTip.Tip="{Binding AccionEstado}">
+                                                    <Viewbox Width="16" Height="16">
+                                                        <Canvas Width="24" Height="24">
+                                                            <Path Classes="svg" Stroke="{Binding EstadoDot, Converter={StaticResource StrBrush}}"
+                                                                  Data="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                                                            <Line Classes="svg" Stroke="{Binding EstadoDot, Converter={StaticResource StrBrush}}"
+                                                                  StartPoint="12,2" EndPoint="12,12"/>
+                                                        </Canvas>
+                                                    </Viewbox>
+                                                </Button>
+                                                <Button Click="BtnEliminarUsuario_Click"
+                                                        Width="30" Height="30" Padding="0" Background="Transparent" BorderThickness="0"
+                                                        ToolTip.Tip="Eliminar">
+                                                    <Viewbox Width="16" Height="16">
+                                                        <Canvas Width="24" Height="24">
+                                                            <Path Classes="svg" Stroke="#FF8B8B" Data="M3 6 5 6 21 6"/>
+                                                            <Path Classes="svg" Stroke="#FF8B8B" Data="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                                        </Canvas>
+                                                    </Viewbox>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Sin usuarios que coincidan con la búsqueda."
+                                   IsVisible="{Binding !Usuarios.Count}"
+                                   Foreground="#8B96A4" FontSize="14"
+                                   HorizontalAlignment="Center" Margin="0,50"/>
+                    </Panel>
+                </ScrollViewer>
+
+                <!-- Footer -->
+                <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Background="#06FFFFFF">
+                    <TextBlock Grid.Column="0" Text="{Binding CountLabel}" Classes="eyebrow" FontSize="11" Margin="20,12"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="20,12" VerticalAlignment="Center">
+                        <Ellipse Width="6" Height="6" Fill="#34E0A1" VerticalAlignment="Center"/>
+                        <TextBlock Text="Sincronizado" Classes="eyebrow" FontSize="11"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+
+    </Grid>
+</UserControl>

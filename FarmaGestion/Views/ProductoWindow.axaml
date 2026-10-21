@@ -4,37 +4,96 @@
         x:Class="FarmaGestion.Views.ProductoWindow"
         x:DataType="vm:ProductoViewModel"
         Title="Registrar Nuevo Medicamento"
-        Width="450" Height="450"
+        Icon="/Assets/farma-icon.png"
+        Width="460" Height="620"
         WindowStartupLocation="CenterOwner"
-        CanResize="False">
+        CanResize="False"
+        Background="#0A0D13">
 
-    <StackPanel Margin="25" Spacing="15">
-        
-        <TextBlock Text="Código de Barras:" FontWeight="SemiBold"/>
-        <TextBox x:Name="TxtCodigoBarras" Text="{Binding CodigoBarras}" PlaceholderText="Escanea o escribe el código" FontSize="16" Padding="8"/>
-        
-        <TextBox Text="{Binding CodigoBarras}" Watermark="Escanea o escribe el código" FontSize="16" Padding="8"/>
+    <Window.Styles>
+        <Style Selector="TextBlock.label">
+            <Setter Property="FontFamily" Value="Consolas, 'Courier New', monospace"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="#8B96A4"/>
+        </Style>
+        <Style Selector="TextBox.field">
+            <Setter Property="Background" Value="#0CFFFFFF"/>
+            <Setter Property="Foreground" Value="#EEF2F6"/>
+            <Setter Property="BorderBrush" Value="#1AFFFFFF"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="CaretBrush" Value="#34E0A1"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="FontSize" Value="15"/>
+        </Style>
+        <Style Selector="TextBox.field:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="#34E0A1"/>
+        </Style>
+    </Window.Styles>
 
-        <TextBlock Text="Nombre del Medicamento:" FontWeight="SemiBold"/>
-        <TextBox Text="{Binding Nombre}" Watermark="Ej. Paracetamol 500mg" FontSize="16" Padding="8"/>
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28" Spacing="16">
 
-        <Grid ColumnDefinitions="*, 20, *">
-            <StackPanel Grid.Column="0" Spacing="10">
-                <TextBlock Text="Precio Unitario (Q):" FontWeight="SemiBold"/>
-                <TextBox Text="{Binding Precio}" FontSize="16" Padding="8"/>
+            <!-- Cabecera -->
+            <StackPanel Orientation="Horizontal" Spacing="13" Margin="0,0,0,6">
+                <Border Width="42" Height="42" CornerRadius="12" Background="#34E0A1"
+                        BoxShadow="0 4 14 0 #5934E0A1">
+                    <TextBlock Text="+" FontSize="27" FontWeight="Bold" Foreground="#04160E"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="GESTIÓN DE INVENTARIO" Classes="label"/>
+                    <TextBlock Text="{Binding TituloVentana}" FontSize="18" FontWeight="Bold" Foreground="#EEF2F6"/>
+                </StackPanel>
             </StackPanel>
 
-            <StackPanel Grid.Column="2" Spacing="10">
-                <TextBlock Text="Existencias Iniciales:" FontWeight="SemiBold"/>
-                <TextBox Text="{Binding Existencias}" FontSize="16" Padding="8"/>
+            <StackPanel Spacing="7">
+                <TextBlock Text="CÓDIGO DE BARRAS" Classes="label"/>
+                <TextBox x:Name="TxtCodigoBarras" Classes="field" Text="{Binding CodigoBarras}"
+                         PlaceholderText="Escanea o escribe el código"/>
             </StackPanel>
-        </Grid>
 
-        <!-- Fíjate cómo enlazamos el Command con el método Guardar() que hicimos en el ViewModel -->
-        <Button Content="Guardar Medicamento" 
-                Command="{Binding GuardarCommand}" 
-                Background="#28a745" Foreground="White" FontSize="16" FontWeight="Bold"
-                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                Padding="15" Margin="0,20,0,0"/>
-    </StackPanel>
+            <StackPanel Spacing="7">
+                <TextBlock Text="NOMBRE DEL MEDICAMENTO Y MILIGRAMOS" Classes="label"/>
+                <TextBox Classes="field" Text="{Binding Nombre}" PlaceholderText="Ej. Paracetamol 500mg"/>
+            </StackPanel>
+
+            <Grid ColumnDefinitions="*, 16, *">
+                <StackPanel Grid.Column="0" Spacing="7">
+                    <TextBlock Text="PRECIO UNITARIO (Q)" Classes="label"/>
+                    <TextBox Classes="field" Text="{Binding Precio}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Spacing="7">
+                    <TextBlock Text="EXISTENCIAS INICIALES" Classes="label"/>
+                    <TextBox Classes="field" Text="{Binding Existencias}"/>
+                </StackPanel>
+            </Grid>
+
+            <Grid ColumnDefinitions="*, 16, *">
+                <StackPanel Grid.Column="0" Spacing="7">
+                    <TextBlock Text="LOTE" Classes="label"/>
+                    <TextBox Classes="field" Text="{Binding Lote}" PlaceholderText="Ej. L-1042"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Spacing="7">
+                    <TextBlock Text="FECHA VENCIMIENTO" Classes="label"/>
+                    <CalendarDatePicker SelectedDate="{Binding FechaVencimiento}"
+                                        HorizontalAlignment="Stretch" FontSize="15"
+                                        Watermark="dd/mm/aaaa"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Mensaje de error de validación -->
+            <Border Background="#24FF6B6B" BorderBrush="#40FF6B6B" BorderThickness="1"
+                    CornerRadius="10" Padding="12" IsVisible="{Binding MostrarError}">
+                <TextBlock Text="{Binding MensajeError}" Foreground="#FF8B8B" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Guardar -->
+            <Button Content="{Binding TextoBoton}"
+                    Command="{Binding GuardarCommand}"
+                    Background="#34E0A1" Foreground="#04160E"
+                    FontSize="15" FontWeight="Bold"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    CornerRadius="12" Padding="15" Margin="0,10,0,0"/>
+        </StackPanel>
+    </ScrollViewer>
 </Window>

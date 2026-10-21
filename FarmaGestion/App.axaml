@@ -2,8 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="FarmaGestion.App"
              xmlns:local="using:FarmaGestion"
-             RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+             RequestedThemeVariant="Dark">
+             <!-- Tema oscuro en toda la app (DataGrid, DatePicker, scrollbars, etc. nativamente oscuros). -->
 
     <Application.DataTemplates>
         <local:ViewLocator/>

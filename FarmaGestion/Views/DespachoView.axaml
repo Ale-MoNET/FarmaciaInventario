@@ -2,57 +2,200 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:FarmaGestion.ViewModels"
              x:Class="FarmaGestion.Views.DespachoView"
-             x:DataType="vm:DespachoViewModel">
-    
-    <Grid RowDefinitions="Auto, Auto, *, Auto" Margin="20">
-        
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="15" Margin="0,0,0,10">
-            <TextBox x:Name="TxtCodigoBusqueda"
-                     Text="{Binding CodigoBusqueda}" 
-                     PlaceholderText="Escanea o escribe el código y presiona Enter..." 
-                     Width="400" FontSize="18" Padding="10">
-                <TextBox.KeyBindings>
-                    <KeyBinding Gesture="Enter" Command="{Binding AgregarCarritoCommand}" />
-                </TextBox.KeyBindings>
-            </TextBox>
-            
-            <Button Content="Agregar" 
-                    Command="{Binding AgregarCarritoCommand}"
-                    Background="#007bff" Foreground="White" 
-                    FontWeight="Bold" Padding="20,10"/>
+             x:DataType="vm:DespachoViewModel"
+             Background="#0A0D13">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.eyebrow">
+            <Setter Property="FontFamily" Value="Consolas, 'Courier New', monospace"/>
+            <Setter Property="FontSize" Value="9.5"/>
+            <Setter Property="Foreground" Value="#8B96A4"/>
+        </Style>
+        <Style Selector="Path.svg">
+            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="StrokeLineCap" Value="Round"/>
+            <Setter Property="StrokeJoin" Value="Round"/>
+            <Setter Property="Fill" Value="Transparent"/>
+        </Style>
+        <Style Selector="Line.svg">
+            <Setter Property="StrokeThickness" Value="2.2"/>
+            <Setter Property="StrokeLineCap" Value="Round"/>
+        </Style>
+        <Style Selector="Polyline.svg">
+            <Setter Property="StrokeThickness" Value="2.2"/>
+            <Setter Property="StrokeLineCap" Value="Round"/>
+            <Setter Property="StrokeJoin" Value="Round"/>
+            <Setter Property="Fill" Value="Transparent"/>
+        </Style>
+        <!-- Botón stepper − / + -->
+        <Style Selector="Button.stepper">
+            <Setter Property="Width" Value="26"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Background" Value="#0AFFFFFF"/>
+            <Setter Property="BorderBrush" Value="#1FFFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="#EEF2F6"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.stepper:pointerover /template/ ContentPresenter">
+            <Setter Property="BorderBrush" Value="#34E0A1"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="22">
+
+        <!-- Búsqueda + Agregar -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,14">
+            <Border Grid.Column="0" CornerRadius="12" BorderBrush="#6634E0A1" BorderThickness="1"
+                    Background="#0D34E0A1" Padding="14,0" Margin="0,0,12,0">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Viewbox Grid.Column="0" Width="17" Height="17" Margin="0,0,10,0" VerticalAlignment="Center">
+                        <Canvas Width="24" Height="24">
+                            <Path Classes="svg" Stroke="#34E0A1" Data="M3 5v14"/>
+                            <Path Classes="svg" Stroke="#34E0A1" Data="M8 5v14"/>
+                            <Path Classes="svg" Stroke="#34E0A1" Data="M12 5v14"/>
+                            <Path Classes="svg" Stroke="#34E0A1" Data="M17 5v14"/>
+                            <Path Classes="svg" Stroke="#34E0A1" Data="M21 5v14"/>
+                        </Canvas>
+                    </Viewbox>
+                    <TextBox Grid.Column="1" x:Name="TxtCodigoBusqueda"
+                             Text="{Binding CodigoBusqueda}"
+                             PlaceholderText="Escanea o escribe el código y presiona Enter…"
+                             Background="Transparent" BorderThickness="0"
+                             Foreground="#EEF2F6" CaretBrush="#34E0A1"
+                             FontSize="15" Padding="0,14" VerticalContentAlignment="Center">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Gesture="Enter" Command="{Binding AgregarCarritoCommand}"/>
+                        </TextBox.KeyBindings>
+                    </TextBox>
+                </Grid>
+            </Border>
+
+            <Button Grid.Column="1" Command="{Binding AgregarCarritoCommand}"
+                    Background="#34E0A1" Foreground="#04160E" CornerRadius="12" Padding="22,14"
+                    FontWeight="SemiBold" FontSize="14">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Viewbox Width="17" Height="17">
+                        <Canvas Width="24" Height="24">
+                            <Line Classes="svg" Stroke="#04160E" StartPoint="12,5" EndPoint="12,19"/>
+                            <Line Classes="svg" Stroke="#04160E" StartPoint="5,12" EndPoint="19,12"/>
+                        </Canvas>
+                    </Viewbox>
+                    <TextBlock Text="Agregar" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- Mensaje / error -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="7" Margin="0,-4,0,12"
+                    IsVisible="{Binding HayAlerta}">
+            <Ellipse Width="5" Height="5" Fill="#FF8B8B" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding MensajeAlerta}" Foreground="#FF8B8B" FontSize="12.5" TextWrapping="Wrap"/>
         </StackPanel>
 
-        <TextBlock Grid.Row="1" 
-                   Text="{Binding MensajeAlerta}" 
-                   Foreground="#dc3545" FontWeight="Bold" FontSize="16"
-                   Margin="0,0,0,15" TextWrapping="Wrap"/>
+        <!-- Carrito -->
+        <Border Grid.Row="2" CornerRadius="14" BorderBrush="#12FFFFFF" BorderThickness="1"
+                Background="#04FFFFFF" ClipToBounds="True">
+            <Grid RowDefinitions="Auto,*">
+                <!-- Encabezado -->
+                <Grid Grid.Row="0" ColumnDefinitions="130,*,120,150,130,46" Background="#08FFFFFF">
+                    <TextBlock Grid.Column="0" Text="CÓDIGO" Classes="eyebrow" Margin="20,13"/>
+                    <TextBlock Grid.Column="1" Text="PRODUCTO" Classes="eyebrow" Margin="0,13"/>
+                    <TextBlock Grid.Column="2" Text="PRECIO UNIT." Classes="eyebrow" Margin="0,13" HorizontalAlignment="Right"/>
+                    <TextBlock Grid.Column="3" Text="CANTIDAD" Classes="eyebrow" Margin="0,13" HorizontalAlignment="Center"/>
+                    <TextBlock Grid.Column="4" Text="SUBTOTAL" Classes="eyebrow" Margin="0,13" HorizontalAlignment="Right"/>
+                    <TextBlock Grid.Column="5" Text="" Classes="eyebrow"/>
+                </Grid>
 
-        <DataGrid Grid.Row="2" 
-                  ItemsSource="{Binding Carritos}"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  GridLinesVisibility="All"
-                  BorderThickness="1" BorderBrush="LightGray">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Código" Binding="{Binding Medicamento.CodigoBarras}" Width="150"/>
-                <DataGridTextColumn Header="Producto" Binding="{Binding Medicamento.Nombre}" Width="*"/>
-                <DataGridTextColumn Header="Precio Unit." Binding="{Binding Medicamento.Precio, StringFormat='{}{0:C}'}" Width="120"/>
-                <DataGridTextColumn Header="Cantidad" Binding="{Binding Cantidad}" Width="100"/>
-                <DataGridTextColumn Header="Su btotal" Binding="{Binding Subtotal, StringFormat='{}{0:C}'}" Width="120"/>
-            </DataGrid.Columns>
-        </DataGrid>
+                <!-- Filas -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <Panel>
+                        <ItemsControl ItemsSource="{Binding Carritos}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ItemCarrito">
+                                    <Border BorderBrush="#0CFFFFFF" BorderThickness="0,0,0,1">
+                                        <Grid ColumnDefinitions="130,*,120,150,130,46" Height="52">
+                                            <TextBlock Grid.Column="0" Text="{Binding Medicamento.CodigoBarras}" Margin="20,0"
+                                                       FontFamily="Consolas, monospace" FontSize="12.5" Foreground="#8B96A4" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Medicamento.Nombre}"
+                                                       FontSize="14" FontWeight="Medium" Foreground="#EEF2F6" VerticalAlignment="Center" TextWrapping="NoWrap"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding PrecioTexto}" HorizontalAlignment="Right"
+                                                       FontFamily="Consolas, monospace" FontSize="13" Foreground="#C2CCD6" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8"
+                                                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Button Classes="stepper" Content="−" Command="{Binding DecrementarCommand}"/>
+                                                <TextBlock Text="{Binding Cantidad}" MinWidth="28" HorizontalAlignment="Center"
+                                                           FontFamily="Consolas, monospace" FontSize="14" FontWeight="SemiBold"
+                                                           Foreground="#EEF2F6" VerticalAlignment="Center"/>
+                                                <Button Classes="stepper" Content="+" Command="{Binding IncrementarCommand}"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="4" Text="{Binding SubtotalTexto}" HorizontalAlignment="Right"
+                                                       FontFamily="Consolas, monospace" FontSize="14" FontWeight="SemiBold" Foreground="#5CE8B4" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="5" Command="{Binding QuitarCommand}"
+                                                    Width="30" Height="30" Padding="0" Background="Transparent" BorderThickness="0"
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Viewbox Width="15" Height="15">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Polyline Classes="svg" Stroke="#8B96A4" Points="3,6 5,6 21,6"/>
+                                                        <Path Classes="svg" Stroke="#8B96A4" Data="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                                    </Canvas>
+                                                </Viewbox>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
 
-        <Grid Grid.Row="3" ColumnDefinitions="*, Auto" Margin="0,20,0,0">
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
-                <TextBlock Text="Total a Pagar:" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding TotalDespacho, StringFormat='{}{0:C}'}" FontSize="28" FontWeight="Bold" Foreground="#d9534f" VerticalAlignment="Center"/>
-                
-                <Button Content="Confirmar Despacho" 
-                        Command="{Binding ConfirmarDespachoCommand}"
-                        Background="#28a745" Foreground="White" 
-                        FontSize="18" FontWeight="Bold" Padding="25,15" Margin="20,0,0,0"/>
-            </StackPanel>
-        </Grid>
-        
+                        <!-- Estado vacío -->
+                        <StackPanel IsVisible="{Binding CarritoVacio}" Spacing="12"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,60">
+                            <Viewbox Width="40" Height="40" HorizontalAlignment="Center">
+                                <Canvas Width="24" Height="24">
+                                    <Ellipse Stroke="#2EFFFFFF" StrokeThickness="1.6" Canvas.Left="8" Canvas.Top="20" Width="2" Height="2"/>
+                                    <Ellipse Stroke="#2EFFFFFF" StrokeThickness="1.6" Canvas.Left="19" Canvas.Top="20" Width="2" Height="2"/>
+                                    <Path Stroke="#2EFFFFFF" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent"
+                                          Data="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock Text="Escanea o agrega un producto para iniciar el despacho."
+                                       Foreground="#8B96A4" FontSize="14" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Panel>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <!-- Barra de checkout -->
+        <Border Grid.Row="3" Margin="0,18,0,0" CornerRadius="14"
+                BorderBrush="#12FFFFFF" BorderThickness="1" Background="#0AFFFFFF" Padding="20,16">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="22" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding ItemCountLabel}" Classes="eyebrow" FontSize="11" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Bottom">
+                        <TextBlock Text="TOTAL A PAGAR" Classes="eyebrow" FontSize="11" VerticalAlignment="Bottom" Margin="0,0,0,6"/>
+                        <TextBlock Text="{Binding TotalTexto}" FontSize="30" FontWeight="Bold" Foreground="#EEF2F6"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <Button Grid.Column="1" Command="{Binding ConfirmarDespachoCommand}"
+                        Background="#34E0A1" Foreground="#04160E" CornerRadius="12" Padding="26,15"
+                        FontWeight="SemiBold" FontSize="15">
+                    <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
+                        <Viewbox Width="18" Height="18">
+                            <Canvas Width="24" Height="24">
+                                <Polyline Classes="svg" Stroke="#04160E" Points="20,6 9,17 4,12"/>
+                            </Canvas>
+                        </Viewbox>
+                        <TextBlock Text="Confirmar despacho" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
     </Grid>
 </UserControl>

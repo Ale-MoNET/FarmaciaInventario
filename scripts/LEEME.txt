@@ -1,0 +1,98 @@
+FarmaGestión — Instalación y primer uso
+=======================================
+
+La app trae todo incluido: no hace falta instalar .NET ni ningún otro programa.
+
+CONTENIDO DEL PAQUETE (Windows)
+-------------------------------
+  FarmaGestion.exe        La aplicación completa.
+  Instalar.bat            Copia la app a la PC y crea los accesos directos.
+  Desinstalar.bat         Quita la app (conserva los datos).
+  appsettings.json        Configuración opcional (ver "Base de datos compartida").
+  productos_ejemplo.csv   Ejemplo del formato para importar productos desde Inventario.
+  LEEME.txt               Este archivo.
+
+Requisitos: Windows 10 u 11 de 64 bits.
+
+INSTALACIÓN EN WINDOWS
+----------------------
+1. Extrae TODO el contenido del .zip a una carpeta (no ejecutes nada desde
+   dentro del zip).
+2. Doble clic en "Instalar.bat".
+   - Normal: se instala solo para tu usuario, en
+       C:\Users\<tuUsuario>\AppData\Local\Programs\FarmaGestion
+   - Clic derecho > "Ejecutar como administrador": se instala para todos los
+     usuarios de la PC, en
+       C:\Program Files\FarmaGestion
+3. Quedan accesos directos "FarmaGestion" en el Escritorio y en el menú Inicio.
+
+Si al abrir la app Windows muestra "Windows protegió tu PC": clic en
+"Más información" > "Ejecutar de todas formas". Ocurre porque la app no está
+firmada digitalmente; solo pasa la primera vez.
+
+Alternativa sin instalador: copia FarmaGestion.exe (y appsettings.json) a
+cualquier carpeta y ábrelo con doble clic.
+
+ACTUALIZAR A UNA VERSIÓN NUEVA
+------------------------------
+Cierra FarmaGestión y ejecuta el Instalar.bat del paquete nuevo. Los datos y el
+appsettings.json ya configurado se conservan.
+
+DESINSTALAR
+-----------
+Ejecuta "Desinstalar.bat" (como administrador si se instaló para todos los
+usuarios). Los datos NO se borran; si ya no los necesitas, elimina a mano la
+carpeta de datos indicada abajo.
+
+PRIMER INICIO DE SESIÓN
+-----------------------
+Al abrirla por primera vez se crea la base de datos y un usuario administrador
+con una contraseña ALEATORIA, guardada en un archivo de texto:
+
+  - Windows:  C:\Users\<tuUsuario>\AppData\Roaming\FarmaGestion\credenciales_admin.txt
+  - macOS:    ~/Library/Application Support/FarmaGestion/credenciales_admin.txt
+
+Usuario: admin
+Contraseña: (la que aparece en ese archivo)
+
+IMPORTANTE: entra, crea tus usuarios, cambia la contraseña del admin y borra
+ese archivo de credenciales.
+
+DATOS Y RESPALDO
+----------------
+Toda la información se guarda localmente en esa misma carpeta:
+
+  - inventario_medicamentos.db   la base de datos (respáldala copiando el archivo)
+  - farmagestion.log             registro de errores, útil para soporte
+
+Por defecto cada equipo (y cada usuario de Windows) tiene su propia base de datos.
+
+BASE DE DATOS COMPARTIDA (opcional)
+-----------------------------------
+Para que varias PC trabajen sobre el mismo inventario, coloca la base de datos
+en una carpeta compartida de la red y, en cada PC, edita el appsettings.json
+que está junto a FarmaGestion.exe:
+
+  "ConnectionStrings": {
+    "Inventario": "Data Source=\\\\SERVIDOR\\Farmacia\\inventario_medicamentos.db"
+  }
+
+(En JSON cada barra invertida se escribe doble.) Todas las PC deben tener
+permiso de lectura y escritura sobre esa carpeta. La app ya está preparada para
+este modo: espera hasta 30 s si otra PC tiene la base ocupada.
+
+IMPORTAR PRODUCTOS POR CSV
+--------------------------
+Desde Inventario > Importar CSV. Formato (ver productos_ejemplo.csv):
+
+  Codigo,Nombre,Precio,Existencias,Lote,Vencimiento
+
+La primera fila es el encabezado. Lote y Vencimiento son opcionales; la fecha va
+como AAAA-MM-DD. No uses comas dentro del nombre. Si el código ya existe, se
+suman las existencias y se actualiza el precio.
+
+macOS
+-----
+1. Copia "FarmaGestion.app" a la carpeta Aplicaciones.
+2. La PRIMERA vez: clic derecho sobre la app > "Abrir" > "Abrir".
+   (Es necesario solo la primera vez porque la app no está firmada con Apple Developer.)

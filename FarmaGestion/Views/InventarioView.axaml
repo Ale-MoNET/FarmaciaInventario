@@ -1,38 +1,256 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="clr-namespace:FarmaGestion.ViewModels" x:Class="FarmaGestion.Views.InventarioView" x:DataType="vm:InventarioViewModel">
-    
-    <!-- Dividimos la pantalla en dos filas: la barra superior (Auto) y la tabla (todo el espacio restante *) -->
-    <Grid RowDefinitions="Auto, *">
-        
-        <!-- BARRA SUPERIOR: Buscador y Botones -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="15" Margin="20">
-            <!-- Este TextBox será clave más adelante para capturar el lector de código de barras USB -->
-            <TextBox Watermark="Buscar o escanear código de barras..." Width="350" FontSize="16"/>
-            
-            <Button Content="Registrar Producto" 
-                    Click="BtnRegistrar_Click"
-                    Background="#28a745" Foreground="White" 
-                    FontWeight="Bold" Padding="15,8"/>
-            
-            <Button Content="Importar CSV" 
-                    Click="BtnImportarCSV_Click"
-                    Background="#17a2b8" Foreground="White" 
-                    FontWeight="Bold" Padding="15,8"/>
-        </StackPanel>
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:FarmaGestion.ViewModels"
+             xmlns:conv="clr-namespace:FarmaGestion.Views.Converters"
+             x:Class="FarmaGestion.Views.InventarioView"
+             x:DataType="vm:InventarioViewModel">
 
-        <!-- TABLA DE INVENTARIO -->
-        <!-- Vinculamos la fuente de datos a la propiedad Medicamentos del ViewModel -->
-        <DataGrid Grid.Row="1" Margin="20,0,20,20" ItemsSource="{Binding Medicamentos}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All" BorderThickness="1" BorderBrush="LightGray">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Código" Binding="{Binding CodigoBarras}" Width="150"/>
-                <DataGridTextColumn Header="Nombre del Medicamento" Binding="{Binding Nombre}" Width="*"/>
-                
-                <!-- El StringFormat='{}{0:C}' toma la configuración regional del sistema (es-GT) y pone la Q automáticamente -->
-                <DataGridTextColumn Header="Precio" Binding="{Binding Precio, StringFormat='{}{0:C}'}" Width="120"/>
-                
-                <DataGridTextColumn Header="Existencias" Binding="{Binding Existencias}" Width="120"/>
-                <DataGridTextColumn Header="Última Actualización" Binding="{Binding FechaUltimaActualizacion, StringFormat='{}{0:dd/MM/yyyy}'}" Width="180"/>
-            </DataGrid.Columns>
-        </DataGrid>
-        
-    </Grid>
+    <UserControl.Resources>
+        <conv:StockColorConverter x:Key="StockColor"/>
+        <conv:StockLabelConverter x:Key="StockLabel"/>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.eyebrow">
+            <Setter Property="FontFamily" Value="Consolas, 'Courier New', monospace"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="#8B96A4"/>
+        </Style>
+
+        <!-- Formas base para íconos vectoriales (lucide) -->
+        <Style Selector="Path.svg">
+            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="StrokeLineCap" Value="Round"/>
+            <Setter Property="StrokeJoin" Value="Round"/>
+            <Setter Property="Fill" Value="Transparent"/>
+        </Style>
+        <Style Selector="Line.svg">
+            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="StrokeLineCap" Value="Round"/>
+        </Style>
+        <Style Selector="Ellipse.svg">
+            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="Fill" Value="Transparent"/>
+        </Style>
+
+        <!-- DataGrid oscuro -->
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#EEF2F6"/>
+            <Setter Property="RowBackground" Value="Transparent"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#0CFFFFFF"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="#08FFFFFF"/>
+            <Setter Property="Foreground" Value="#8B96A4"/>
+            <Setter Property="FontFamily" Value="Consolas, 'Courier New', monospace"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="SeparatorBrush" Value="#12FFFFFF"/>
+        </Style>
+        <Style Selector="DataGridRow">
+            <Setter Property="Foreground" Value="#EEF2F6"/>
+        </Style>
+        <Style Selector="DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="#0D34E0A1"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        <Style Selector="DataGridCell">
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <Style Selector="DataGridCell:focus /template/ Rectangle#FocusVisual">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border Background="#0A0D13">
+        <Grid RowDefinitions="Auto,Auto,*" Margin="22">
+
+            <!-- TARJETAS DE ESTADÍSTICAS -->
+            <Grid Grid.Row="0" ColumnDefinitions="*,*,*,*" Margin="0,0,0,20">
+                <Grid.Styles>
+                    <Style Selector="Border.card">
+                        <Setter Property="Background" Value="#0AFFFFFF"/>
+                        <Setter Property="BorderBrush" Value="#12FFFFFF"/>
+                        <Setter Property="BorderThickness" Value="1"/>
+                        <Setter Property="CornerRadius" Value="14"/>
+                        <Setter Property="Padding" Value="18,16"/>
+                        <Setter Property="Margin" Value="7,0"/>
+                    </Style>
+                    <Style Selector="TextBlock.stat">
+                        <Setter Property="FontSize" Value="26"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                        <Setter Property="Foreground" Value="#EEF2F6"/>
+                    </Style>
+                </Grid.Styles>
+
+                <Border Grid.Column="0" Classes="card">
+                    <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="PRODUCTOS" Classes="eyebrow"/>
+                            <Border Grid.Column="1" Width="24" Height="24" CornerRadius="7" Background="#1F34E0A1">
+                                <Viewbox Width="14" Height="14">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Classes="svg" Stroke="#5CE8B4" Data="M21 8V17a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 17V8"/>
+                                        <Path Classes="svg" Stroke="#5CE8B4" Data="M3.29 7 12 12l8.71-5"/>
+                                        <Path Classes="svg" Stroke="#5CE8B4" Data="M12 22V12"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                        </Grid>
+                        <TextBlock Text="{Binding TotalProductos}" Classes="stat"/>
+                        <TextBlock Text="en catálogo" FontSize="11" Foreground="#5CE8B4"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Classes="card">
+                    <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="BAJO STOCK" Classes="eyebrow"/>
+                            <Border Grid.Column="1" Width="24" Height="24" CornerRadius="7" Background="#22FFB03C">
+                                <Viewbox Width="14" Height="14">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Classes="svg" Stroke="#FFC061" Data="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                        <Line Classes="svg" Stroke="#FFC061" StartPoint="12,9" EndPoint="12,13"/>
+                                        <Line Classes="svg" Stroke="#FFC061" StartPoint="12,17" EndPoint="12.01,17"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                        </Grid>
+                        <TextBlock Text="{Binding ConteoBajoStock}" Classes="stat"/>
+                        <TextBlock Text="requieren pedido" FontSize="11" Foreground="#FFC061"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Classes="card">
+                    <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="POR VENCER" Classes="eyebrow"/>
+                            <Border Grid.Column="1" Width="24" Height="24" CornerRadius="7" Background="#24FF6B6B">
+                                <Viewbox Width="14" Height="14">
+                                    <Canvas Width="24" Height="24">
+                                        <Ellipse Classes="svg" Stroke="#FF8B8B" Canvas.Left="2" Canvas.Top="2" Width="20" Height="20"/>
+                                        <Path Classes="svg" Stroke="#FF8B8B" Data="M12 6 12 12 16 14"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                        </Grid>
+                        <TextBlock Text="{Binding ConteoPorVencer}" Classes="stat"/>
+                        <TextBlock Text="&lt; 90 días" FontSize="11" Foreground="#FF8B8B"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="3" Classes="card">
+                    <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="VALOR INVENTARIO" Classes="eyebrow"/>
+                            <Border Grid.Column="1" Width="24" Height="24" CornerRadius="7" Background="#1F34E0A1">
+                                <Viewbox Width="14" Height="14">
+                                    <Canvas Width="24" Height="24">
+                                        <Line Classes="svg" Stroke="#5CE8B4" StartPoint="12,1" EndPoint="12,23"/>
+                                        <Path Classes="svg" Stroke="#5CE8B4" Data="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                        </Grid>
+                        <TextBlock Text="{Binding ValorInventario, StringFormat='{}{0:C0}'}" Classes="stat"/>
+                        <TextBlock Text="costo total en stock" FontSize="11" Foreground="#5CE8B4"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- TOOLBAR -->
+            <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+                <TextBox Grid.Column="0" x:Name="TxtBusqueda" MaxWidth="440" HorizontalAlignment="Left"
+                         PlaceholderText="Buscar o escanear código de barras…"
+                         Text="{Binding TerminoBusqueda}"
+                         KeyDown="TxtBusqueda_KeyDown"
+                         Background="#0AFFFFFF" Foreground="#EEF2F6"
+                         BorderBrush="#1AFFFFFF" CornerRadius="11"
+                         CaretBrush="#34E0A1" Padding="12" FontSize="14"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                    <Button Content="＋  Registrar producto"
+                            Click="BtnRegistrar_Click"
+                            Background="#34E0A1" Foreground="#04160E"
+                            FontWeight="SemiBold" CornerRadius="11" Padding="16,10"/>
+                    <Button Content="⤓  Importar CSV"
+                            Click="BtnImportarCSV_Click"
+                            Background="#08FFFFFF" Foreground="#C2CCD6"
+                            BorderBrush="#1FFFFFFF" BorderThickness="1"
+                            FontWeight="SemiBold" CornerRadius="11" Padding="16,10"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- TABLA -->
+            <Border Grid.Row="2" CornerRadius="14" BorderBrush="#12FFFFFF" BorderThickness="1"
+                    Background="#04FFFFFF" ClipToBounds="True">
+                <DataGrid ItemsSource="{Binding Medicamentos}" AutoGenerateColumns="False" IsReadOnly="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Código" Binding="{Binding CodigoBarras}" Width="130"/>
+                        <DataGridTextColumn Header="Nombre del medicamento" Binding="{Binding Nombre}" Width="*"/>
+                        <DataGridTextColumn Header="Lote" Binding="{Binding Lote}" Width="110"/>
+                        <DataGridTextColumn Header="Vencimiento"
+                                            Binding="{Binding FechaVencimiento, StringFormat='{}{0:dd/MM/yyyy}'}" Width="130"/>
+                        <DataGridTextColumn Header="Precio"
+                                            Binding="{Binding Precio, StringFormat='{}{0:C}'}" Width="110"/>
+
+                        <!-- Existencias como píldora de color -->
+                        <DataGridTemplateColumn Header="Existencia" Width="140">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border HorizontalAlignment="Left" CornerRadius="999" Padding="10,4" Margin="0,4"
+                                            Background="{Binding Existencias, Converter={StaticResource StockColor}}">
+                                        <TextBlock Text="{Binding Existencias, Converter={StaticResource StockLabel}}"
+                                                   FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{Binding Existencias, Converter={StaticResource StockColor}, ConverterParameter=fg}"/>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTextColumn Header="Última actualización"
+                                            Binding="{Binding FechaUltimaActualizacion, StringFormat='{}{0:dd/MM/yyyy}'}" Width="160"/>
+
+                        <!-- Acciones: editar / eliminar -->
+                        <DataGridTemplateColumn Header="" Width="92">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="4"
+                                                HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Button Click="BtnEditarProducto_Click"
+                                                Width="30" Height="30" Padding="0" Background="Transparent" BorderThickness="0"
+                                                ToolTip.Tip="Editar">
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Stroke="#8B96A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent"
+                                                          Data="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                                    <Path Stroke="#8B96A4" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent"
+                                                          Data="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                        </Button>
+                                        <Button Click="BtnEliminarProducto_Click"
+                                                Width="30" Height="30" Padding="0" Background="Transparent" BorderThickness="0"
+                                                ToolTip.Tip="Eliminar">
+                                            <Viewbox Width="16" Height="16">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Stroke="#FF8B8B" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent"
+                                                          Data="M3 6 5 6 21 6"/>
+                                                    <Path Stroke="#FF8B8B" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent"
+                                                          Data="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+        </Grid>
+    </Border>
 </UserControl>

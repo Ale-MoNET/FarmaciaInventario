@@ -77,6 +77,12 @@ namespace FarmaGestion.Migrations
                     b.Property<DateTime>("FechaUltimaActualizacion")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaVencimiento")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Lote")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -90,6 +96,42 @@ namespace FarmaGestion.Migrations
                         .IsUnique();
 
                     b.ToTable("Medicamentos");
+                });
+
+            modelBuilder.Entity("FarmaGestion.Models.Usuario", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NombreUsuario")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordSalt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Rol")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NombreUsuario")
+                        .IsUnique();
+
+                    b.ToTable("Usuarios");
                 });
 
             modelBuilder.Entity("FarmaGestion.Models.DetalleDespacho", b =>

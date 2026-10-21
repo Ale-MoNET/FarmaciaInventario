@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="FarmaGestion.Views.ConfirmWindow"
+        Title="Confirmar"
+        Width="420" SizeToContent="Height"
+        MinHeight="180"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="#0A0D13">
+
+    <StackPanel Margin="26" Spacing="18">
+        <TextBlock x:Name="TxtTitulo" Text="Confirmar" FontSize="18" FontWeight="Bold" Foreground="#EEF2F6"/>
+        <TextBlock x:Name="TxtMensaje" Text="" FontSize="14" Foreground="#C2CCD6" TextWrapping="Wrap"/>
+
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+            <Button x:Name="BtnCancelar" Content="Cancelar" Click="Cancelar_Click"
+                    Background="#08FFFFFF" Foreground="#C2CCD6"
+                    BorderBrush="#1FFFFFFF" BorderThickness="1"
+                    FontWeight="SemiBold" CornerRadius="10" Padding="16,10"/>
+            <Button x:Name="BtnAceptar" Content="Aceptar" Click="Aceptar_Click"
+                    Background="#FF6B6B" Foreground="#2A0E0E"
+                    FontWeight="SemiBold" CornerRadius="10" Padding="16,10"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

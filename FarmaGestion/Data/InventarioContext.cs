@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.IO;
 using FarmaGestion.Models;
+using FarmaGestion.Services;
 
 namespace FarmaGestion.Data;
 
@@ -10,14 +11,30 @@ public class InventarioContext : DbContext
     public DbSet<Medicamentos> Medicamentos { get; set; }
     public DbSet<Despacho> Despachos { get; set; }
     public DbSet<DetalleDespacho> DetallesDespacho { get; set; }
+    public DbSet<Usuario> Usuarios { get; set; }
+
+    /// <summary>Constructor por defecto (usado por las herramientas de EF y como respaldo).</summary>
+    public InventarioContext()
+    {
+    }
+
+    /// <summary>
+    /// Constructor con opciones inyectadas. Lo usan el <c>IDbContextFactory</c> registrado
+    /// en el contenedor de DI y las pruebas (que inyectan SQLite en memoria).
+    /// </summary>
+    public InventarioContext(DbContextOptions<InventarioContext> options) : base(options)
+    {
+    }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        // Para desarrollo en la Mac, crearemos el archivo .db directamente en la carpeta donde se ejecuta la app.
-        // SQLite creará este archivo automáticamente si no existe.
-        string dbPath = "inventario_medicamentos.db";
-            
-        optionsBuilder.UseSqlite($"Data Source={dbPath}");
+        // Solo configuramos aquí si nadie inyectó opciones (p. ej. al usar el constructor
+        // por defecto o las herramientas de EF). La base de datos vive en la carpeta de
+        // datos del usuario, no en el directorio de trabajo.
+        if (!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseSqlite($"Data Source={AppPaths.RutaBaseDatos}");
+        }
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -43,6 +60,11 @@ public class InventarioContext : DbContext
 
         modelBuilder.Entity<Despacho>()
             .Property(d => d.Total)
-            .HasConversion<double>();   
+            .HasConversion<double>();
+
+        // 3. Aseguramos que el nombre de usuario sea único
+        modelBuilder.Entity<Usuario>()
+            .HasIndex(u => u.NombreUsuario)
+            .IsUnique();
     }   
 }

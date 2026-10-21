@@ -3,3 +3,23 @@ obj/
 /packages/
 riderModule.iml
 /_ReSharper.Caches/
+
+# Base de datos SQLite local (no debe versionarse: contiene datos y provoca conflictos)
+*.db
+*.db-shm
+*.db-wal
+
+# Credenciales generadas en el primer arranque
+credenciales_admin.txt
+
+# Carpeta del IDE
+.idea/
+.vs/
+# Artefactos de publicación
+/dist/
+
+# Archivos del Finder
+.DS_Store
+
+# Grabaciones de pruebas (video, no se versionan)
+/grabaciones/
