@@ -17,6 +17,7 @@ public static class ComprobantePdf
     private const string ColorAcento = "#0E8F63";
     private const string ColorLinea = "#DCE2E9";
     private const string ColorFondoFila = "#F2F5F8";
+    private const string ColorAnulado = "#C0392B";
 
     private const double Margen = 54;
     private const double Derecha = 558;   // 612 - margen
@@ -88,6 +89,12 @@ public static class ComprobantePdf
 
         doc.TextoDerecha("COMPROBANTE No.", Derecha, 46, 8.5, negrita: true, ColorTenue);
         doc.TextoDerecha($"#{c.Id:D5}", Derecha, 58, 22, negrita: true, ColorAcento);
+
+        if (c.Anulado)
+        {
+            // Sello de anulación: el documento sigue siendo válido como registro, no como venta.
+            doc.TextoDerecha("ANULADO", Derecha, 88, 11, negrita: true, ColorAnulado);
+        }
 
         doc.Linea(Margen, 104, Derecha, 104, 0.8, ColorLinea);
 
@@ -173,8 +180,20 @@ public static class ComprobantePdf
         doc.TextoDerecha(Moneda(c.Total), Derecha - 14, y + 12, 17, negrita: true, ColorAcento);
 
         y += 62;
-        doc.Texto("Este comprobante respalda la salida de inventario registrada en el sistema.",
-            Margen, y, 9, negrita: false, ColorTenue);
+        if (c.Anulado)
+        {
+            string quien = string.IsNullOrWhiteSpace(c.UsuarioAnulacion) ? "" : $" por {c.UsuarioAnulacion}";
+            doc.Texto($"DESPACHO ANULADO el {c.FechaAnulacion:dd/MM/yyyy HH:mm}{quien}. Las unidades volvieron al inventario.",
+                Margen, y, 9, negrita: true, ColorAnulado);
+            if (!string.IsNullOrWhiteSpace(c.MotivoAnulacion))
+                doc.Texto(PdfDocumento.Recortar($"Motivo: {c.MotivoAnulacion}", Derecha - Margen, 9), Margen, y + 14, 9,
+                    negrita: false, ColorSuave);
+        }
+        else
+        {
+            doc.Texto("Este comprobante respalda la salida de inventario registrada en el sistema.",
+                Margen, y, 9, negrita: false, ColorTenue);
+        }
     }
 
     private static void DibujarPies(PdfDocumento doc, ComprobanteDespacho c)

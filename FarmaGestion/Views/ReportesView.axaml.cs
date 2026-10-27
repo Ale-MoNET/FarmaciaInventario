@@ -24,4 +24,18 @@ public partial class ReportesView : UserControl
         if (DataContext is ReportesViewModel vm)
             await vm.CargarVencimientosAsync();
     }
+
+    private async void BtnDeshacerDespacho_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Control { DataContext: DespachoReporteItem item }) return;
+        if (TopLevel.GetTopLevel(this) is not Window owner) return;
+        if (DataContext is not ReportesViewModel vm) return;
+
+        var comprobante = await vm.ObtenerComprobanteAsync(item.Id);
+        if (comprobante is null) return;
+
+        // Si se deshace, el ViewModel se refresca solo al recibir InventarioActualizadoMessage.
+        var ventana = new AnularDespachoWindow(comprobante);
+        await ventana.ShowDialog<string?>(owner);
+    }
 }

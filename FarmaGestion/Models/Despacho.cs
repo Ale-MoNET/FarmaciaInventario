@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace FarmaGestion.Models;
 
@@ -8,6 +9,22 @@ public class Despacho
     public int Id { get; set; }
     public DateTime Fecha { get; set; }
     public decimal Total { get; set; }
+
+    // ----- Anulación (deshacer el despacho) -----
+
+    /// <summary>
+    /// True cuando el despacho fue deshecho: las unidades volvieron a sus lotes y la venta
+    /// no cuenta en los reportes. El registro se conserva para la trazabilidad.
+    /// </summary>
+    public bool Anulado { get; set; }
+
+    public DateTime? FechaAnulacion { get; set; }
+
+    [StringLength(300)]
+    public string? MotivoAnulacion { get; set; }
+
+    [StringLength(100)]
+    public string? UsuarioAnulacion { get; set; }
     
     // Relación uno a muchos: Un despacho tiene varios detalles
     public List<DetalleDespacho> Detalles { get; set; } = new();

@@ -48,7 +48,7 @@
         </Style>
     </Window.Styles>
 
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" Margin="26">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="26">
 
         <!-- Encabezado -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,18">
@@ -62,8 +62,8 @@
             </Border>
 
             <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
-                <TextBlock Text="Despacho confirmado" FontSize="19" FontWeight="Bold" Foreground="#EEF2F6"/>
-                <TextBlock Text="El inventario ya fue actualizado. Puedes descargar o imprimir el detalle."
+                <TextBlock Text="{Binding TituloTexto}" FontSize="19" FontWeight="Bold" Foreground="#EEF2F6"/>
+                <TextBlock Text="{Binding SubtituloTexto}"
                            FontSize="12.5" Foreground="#8B96A4" TextWrapping="Wrap"/>
             </StackPanel>
 
@@ -94,8 +94,21 @@
             </Grid>
         </Border>
 
+        <!-- Aviso: despacho deshecho -->
+        <Border Grid.Row="2" IsVisible="{Binding Anulado}" CornerRadius="12" BorderBrush="#40FF6B6B"
+                BorderThickness="1" Background="#1AFF6B6B" Padding="16,12" Margin="0,0,0,14">
+            <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                <Border CornerRadius="999" Padding="10,3" Background="#33FF6B6B" VerticalAlignment="Center">
+                    <TextBlock Text="ANULADO" FontSize="11" FontWeight="Bold" Foreground="#FF8B8B"
+                               FontFamily="Consolas, 'Courier New', monospace"/>
+                </Border>
+                <TextBlock Text="{Binding AnuladoTexto}" FontSize="12.5" Foreground="#FFB3B3"
+                           TextWrapping="Wrap" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
         <!-- Detalle -->
-        <Border Grid.Row="2" CornerRadius="12" BorderBrush="#12FFFFFF" BorderThickness="1"
+        <Border Grid.Row="3" CornerRadius="12" BorderBrush="#12FFFFFF" BorderThickness="1"
                 Background="#04FFFFFF" ClipToBounds="True">
             <Grid RowDefinitions="Auto,Auto">
                 <Grid Grid.Row="0" ColumnDefinitions="110,*,54,92,100" Background="#08FFFFFF">
@@ -140,7 +153,7 @@
         </Border>
 
         <!-- Total -->
-        <Border Grid.Row="3" Margin="0,14,0,0" CornerRadius="12" BorderBrush="#2634E0A1"
+        <Border Grid.Row="4" Margin="0,14,0,0" CornerRadius="12" BorderBrush="#2634E0A1"
                 BorderThickness="1" Background="#0D34E0A1" Padding="18,14">
             <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Grid.Column="0" Text="TOTAL DEL DESPACHO" Classes="eyebrow" FontSize="11"
@@ -151,12 +164,24 @@
         </Border>
 
         <!-- Acciones -->
-        <Grid Grid.Row="4" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,18,0,0">
+        <Grid Grid.Row="5" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,18,0,0">
             <Button Grid.Column="0" x:Name="BtnCerrar" Content="Cerrar" Click="Cerrar_Click"
                     Background="Transparent" Foreground="#8B96A4" BorderThickness="0"
                     FontWeight="SemiBold" FontSize="13.5" Padding="4,12"/>
 
-            <Button Grid.Column="2" x:Name="BtnImprimir" Classes="ghost" Click="Imprimir_Click"
+            <Button Grid.Column="1" x:Name="BtnDeshacer" Click="Deshacer_Click"
+                    IsVisible="{Binding PuedeDeshacer}" Margin="10,0,0,0"
+                    Background="Transparent" Foreground="#FF8B8B"
+                    BorderBrush="#2EFF6B6B" BorderThickness="1" CornerRadius="11"
+                    FontWeight="SemiBold" FontSize="13" Padding="14,11"
+                    ToolTip.Tip="Devuelve las unidades al inventario y anula esta venta">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="↺" FontSize="15" VerticalAlignment="Center"/>
+                    <TextBlock Text="Deshacer despacho" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <Button Grid.Column="3" x:Name="BtnImprimir" Classes="ghost" Click="Imprimir_Click"
                     Margin="0,0,10,0">
                 <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
                     <Viewbox Width="16" Height="16">
@@ -171,7 +196,7 @@
                 </StackPanel>
             </Button>
 
-            <Button Grid.Column="3" x:Name="BtnDescargar" Click="Descargar_Click"
+            <Button Grid.Column="4" x:Name="BtnDescargar" Click="Descargar_Click"
                     Background="#34E0A1" Foreground="#04160E" CornerRadius="11" Padding="20,12"
                     FontWeight="SemiBold" FontSize="13.5">
                 <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
@@ -188,7 +213,7 @@
         </Grid>
 
         <!-- Mensaje de resultado -->
-        <StackPanel Grid.Row="5" Orientation="Horizontal" Spacing="7" Margin="0,12,0,0"
+        <StackPanel Grid.Row="6" Orientation="Horizontal" Spacing="7" Margin="0,12,0,0"
                     IsVisible="{Binding HayEstado}">
             <Ellipse Width="5" Height="5" VerticalAlignment="Center"
                      Fill="{Binding EstadoColor, Converter={StaticResource StrBrush}}"/>

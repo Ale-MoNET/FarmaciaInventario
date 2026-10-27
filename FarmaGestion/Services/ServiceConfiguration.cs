@@ -42,6 +42,7 @@ public static class ServiceConfiguration
         services.AddTransient<ProductoViewModel>();
         services.AddTransient<IngresoMercaderiaViewModel>();
         services.AddTransient<BajaLoteViewModel>();
+        services.AddTransient<AnularDespachoViewModel>();
         services.AddTransient<EditarLoteViewModel>();
         services.AddTransient<UsuarioFormViewModel>();
 
