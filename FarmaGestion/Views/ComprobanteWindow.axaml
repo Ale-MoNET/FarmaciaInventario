@@ -97,14 +97,14 @@
         <!-- Aviso: despacho deshecho -->
         <Border Grid.Row="2" IsVisible="{Binding Anulado}" CornerRadius="12" BorderBrush="#40FF6B6B"
                 BorderThickness="1" Background="#1AFF6B6B" Padding="16,12" Margin="0,0,0,14">
-            <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                <Border CornerRadius="999" Padding="10,3" Background="#33FF6B6B" VerticalAlignment="Center">
+            <Grid ColumnDefinitions="Auto,12,*">
+                <Border Grid.Column="0" CornerRadius="999" Padding="10,3" Background="#33FF6B6B" VerticalAlignment="Center">
                     <TextBlock Text="ANULADO" FontSize="11" FontWeight="Bold" Foreground="#FF8B8B"
                                FontFamily="Consolas, 'Courier New', monospace"/>
                 </Border>
-                <TextBlock Text="{Binding AnuladoTexto}" FontSize="12.5" Foreground="#FFB3B3"
+                <TextBlock Grid.Column="2" Text="{Binding AnuladoTexto}" FontSize="12.5" Foreground="#FFB3B3"
                            TextWrapping="Wrap" VerticalAlignment="Center"/>
-            </StackPanel>
+            </Grid>
         </Border>
 
         <!-- Detalle -->

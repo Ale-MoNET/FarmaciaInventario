@@ -313,7 +313,7 @@
                 <Border Grid.Column="0" CornerRadius="14" BorderBrush="#12FFFFFF" BorderThickness="1"
                         Background="#04FFFFFF" ClipToBounds="True">
                     <Grid RowDefinitions="Auto,*">
-                        <Grid Grid.Row="0" ColumnDefinitions="110,*,70,110,110" Background="#08FFFFFF" >
+                        <Grid Grid.Row="0" ColumnDefinitions="124,*,64,110,100" Background="#08FFFFFF" >
                             <TextBlock Grid.Column="0" Text="No. DESPACHO" Classes="eyebrow" Margin="20,13"/>
                             <TextBlock Grid.Column="1" Text="FECHA Y HORA" Classes="eyebrow" Margin="0,13"/>
                             <TextBlock Grid.Column="2" Text="ÍTEMS" Classes="eyebrow" Margin="0,13" HorizontalAlignment="Center"/>
@@ -328,7 +328,7 @@
                                         <DataTemplate x:DataType="vm:DespachoReporteItem">
                                             <Border BorderBrush="#0CFFFFFF" BorderThickness="0,0,0,1"
                                                     Opacity="{Binding Anulado, Converter={StaticResource AnuladoOpacidad}}">
-                                                <Grid ColumnDefinitions="110,*,70,110,110" Height="46">
+                                                <Grid ColumnDefinitions="124,*,64,110,100" Height="46">
                                                     <TextBlock Grid.Column="0" Text="{Binding IdTexto}" Margin="20,0"
                                                                FontFamily="Consolas, monospace" FontSize="12.5" Foreground="#5CE8B4" VerticalAlignment="Center"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding FechaTexto}" FontSize="13" Foreground="#C2CCD6" VerticalAlignment="Center"/>
