@@ -21,10 +21,12 @@ public partial class ComprobanteWindow : Window
     {
     }
 
-    public ComprobanteWindow(ComprobanteDespacho comprobante)
+    /// <param name="consulta">True al abrirlo desde Reportes: el despacho no es reciente, solo se consulta.</param>
+    public ComprobanteWindow(ComprobanteDespacho comprobante, bool consulta = false)
     {
         InitializeComponent();
-        DataContext = new ComprobanteViewModel(comprobante);
+        DataContext = new ComprobanteViewModel(comprobante, consulta);
+        if (consulta) Title = "Comprobante de despacho";
 
         Opened += (_, _) => BtnDescargar.Focus();
     }
@@ -84,6 +86,19 @@ public partial class ComprobanteWindow : Window
             LoggerService.Error("No se pudo preparar el comprobante para imprimir", ex);
             vm.MostrarEstado("No se pudo preparar la impresión del comprobante.", esError: true);
         }
+    }
+
+    private async void Deshacer_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not ComprobanteViewModel vm) return;
+
+        var dialogo = new AnularDespachoWindow(vm.Comprobante);
+        var mensaje = await dialogo.ShowDialog<string?>(this);
+        if (mensaje is null) return; // canceló o no se pudo deshacer
+
+        var motivo = (dialogo.DataContext as AnularDespachoViewModel)?.Motivo.Trim() ?? string.Empty;
+        vm.MarcarAnulado(motivo, SesionActual.Usuario?.NombreUsuario ?? string.Empty);
+        vm.MostrarEstado(mensaje);
     }
 
     private void Cerrar_Click(object? sender, RoutedEventArgs e) => Close();

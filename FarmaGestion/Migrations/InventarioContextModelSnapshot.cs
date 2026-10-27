@@ -66,11 +66,25 @@ namespace FarmaGestion.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("Anulado")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("Fecha")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FechaAnulacion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MotivoAnulacion")
+                        .HasMaxLength(300)
                         .HasColumnType("TEXT");
 
                     b.Property<double>("Total")
                         .HasColumnType("REAL");
+
+                    b.Property<string>("UsuarioAnulacion")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 

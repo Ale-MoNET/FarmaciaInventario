@@ -15,10 +15,28 @@ namespace FarmaGestion.ViewModels;
 /// <summary>Fila de la tabla de despachos del reporte.</summary>
 public class DespachoReporteItem
 {
+    public int Id { get; set; }
     public string IdTexto { get; set; } = string.Empty;
     public string FechaTexto { get; set; } = string.Empty;
     public int Unidades { get; set; }
     public string TotalTexto { get; set; } = string.Empty;
+
+    /// <summary>Resumen corto de productos, p. ej. "Paracetamol ×2 · Ibuprofeno ×1 · +2 más".</summary>
+    public string ProductosTexto { get; set; } = string.Empty;
+
+    /// <summary>True si el despacho fue deshecho: se muestra atenuado y sin botón.</summary>
+    public bool Anulado { get; set; }
+    public bool PuedeDeshacer => !Anulado;
+
+    /// <summary>Arma el resumen de productos mostrando como máximo <paramref name="maximo"/> nombres.</summary>
+    public static string ResumirProductos(IReadOnlyList<ProductoDespacho> productos, int maximo = 3)
+    {
+        if (productos.Count == 0) return "Sin detalle";
+        var partes = productos.Take(maximo).Select(p => $"{p.Nombre} ×{p.Cantidad}").ToList();
+        int resto = productos.Count - maximo;
+        if (resto > 0) partes.Add($"+{resto} más");
+        return string.Join(" · ", partes);
+    }
 }
 
 /// <summary>Barra del gráfico "ventas por día".</summary>
@@ -105,10 +123,14 @@ public partial class ReportesViewModel : ObservableObject
         _ = GenerarReporteAsync();
         _ = CargarVencimientosAsync();
 
-        // Cualquier ingreso, despacho o baja refresca el reporte de vencimientos.
+        // Cualquier ingreso, despacho, baja o anulación refresca ambos reportes.
         WeakReferenceMessenger.Default.Register<InventarioActualizadoMessage>(this, (_, _) =>
         {
-            Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () => await CargarVencimientosAsync());
+            Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                await CargarVencimientosAsync();
+                await GenerarReporteAsync();
+            });
         });
     }
 
@@ -189,6 +211,10 @@ public partial class ReportesViewModel : ObservableObject
         };
     }
 
+    /// <summary>Datos completos de un despacho de la tabla, para el diálogo de deshacer.</summary>
+    public Task<ComprobanteDespacho?> ObtenerComprobanteAsync(int despachoId)
+        => _despachoRepo.ObtenerComprobanteAsync(despachoId);
+
     [RelayCommand]
     public async Task GenerarReporteAsync()
     {
@@ -219,10 +245,13 @@ public partial class ReportesViewModel : ObservableObject
             {
                 DespachosRango.Add(new DespachoReporteItem
                 {
+                    Id = d.Id,
                     IdTexto = $"#{d.Id}",
                     FechaTexto = d.Fecha.ToString("dd/MM/yyyy · HH:mm"),
                     Unidades = d.Unidades,
-                    TotalTexto = d.Total.ToString("C")
+                    TotalTexto = d.Total.ToString("C"),
+                    ProductosTexto = DespachoReporteItem.ResumirProductos(d.Productos),
+                    Anulado = d.Anulado
                 });
             }
             SinDespachos = r.Despachos.Count == 0;

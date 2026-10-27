@@ -1,0 +1,98 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:FarmaGestion.ViewModels"
+        x:Class="FarmaGestion.Views.AnularDespachoWindow"
+        x:DataType="vm:AnularDespachoViewModel"
+        Title="Deshacer despacho"
+        Icon="/Assets/farma-icon.png"
+        Width="480" SizeToContent="Height" MaxHeight="760"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="#0A0D13">
+
+    <Window.Styles>
+        <Style Selector="TextBlock.label">
+            <Setter Property="FontFamily" Value="Consolas, 'Courier New', monospace"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="#8B96A4"/>
+        </Style>
+        <Style Selector="TextBox.field">
+            <Setter Property="Background" Value="#0CFFFFFF"/>
+            <Setter Property="Foreground" Value="#EEF2F6"/>
+            <Setter Property="BorderBrush" Value="#1AFFFFFF"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="CaretBrush" Value="#FF8B8B"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="FontSize" Value="15"/>
+        </Style>
+        <Style Selector="TextBox.field:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="#FF8B8B"/>
+        </Style>
+    </Window.Styles>
+
+    <StackPanel Margin="28" Spacing="16">
+
+        <StackPanel Orientation="Horizontal" Spacing="13" Margin="0,0,0,6">
+            <Border Width="42" Height="42" CornerRadius="12" Background="#FF6B6B">
+                <TextBlock Text="↺" FontSize="24" FontWeight="Bold" Foreground="#2B0A0A"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <StackPanel VerticalAlignment="Center" Spacing="2">
+                <TextBlock Text="ANULAR VENTA" Classes="label"/>
+                <TextBlock Text="Deshacer despacho" FontSize="18" FontWeight="Bold" Foreground="#EEF2F6"/>
+            </StackPanel>
+        </StackPanel>
+
+        <Border Background="#07FFFFFF" BorderBrush="#12FFFFFF" BorderThickness="1" CornerRadius="12" Padding="14,12">
+            <StackPanel Spacing="3">
+                <TextBlock Text="{Binding Encabezado}" FontSize="14.5" FontWeight="SemiBold" Foreground="#EEF2F6" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding Detalle}" FontSize="12" Foreground="#8B96A4" TextWrapping="Wrap"/>
+                <Border Height="1" Background="#12FFFFFF" Margin="0,8,0,6"/>
+                <TextBlock Text="SE DEVOLVERÁ AL INVENTARIO" Classes="label" Margin="0,0,0,2"/>
+                <ScrollViewer MaxHeight="150" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Productos}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <TextBlock Text="{Binding}" FontSize="12.5" Foreground="#C2CCD6" Margin="0,2" TextTrimming="CharacterEllipsis"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </StackPanel>
+        </Border>
+
+        <TextBlock Text="Las unidades volverán a los mismos lotes de los que salieron y el despacho dejará de contar en los reportes. El comprobante se conserva marcado como anulado."
+                   FontSize="12.5" Foreground="#C2CCD6" TextWrapping="Wrap"/>
+
+        <!-- Motivo del bloqueo (ya anulado, sin lotes, sin permiso) -->
+        <Border Background="#1AFFC46B" BorderBrush="#40FFC46B" BorderThickness="1"
+                CornerRadius="10" Padding="12" IsVisible="{Binding EstaBloqueado}">
+            <TextBlock Text="{Binding Bloqueo}" Foreground="#FFD08A" TextWrapping="Wrap" FontSize="12.5"/>
+        </Border>
+
+        <StackPanel Spacing="7" IsVisible="{Binding !EstaBloqueado}">
+            <TextBlock Text="MOTIVO (OBLIGATORIO)" Classes="label"/>
+            <TextBox x:Name="TxtMotivo" Classes="field" Text="{Binding Motivo}"
+                     PlaceholderText="Ej. el cliente devolvió el producto, se cobró de más"/>
+        </StackPanel>
+
+        <Border Background="#24FF6B6B" BorderBrush="#40FF6B6B" BorderThickness="1"
+                CornerRadius="10" Padding="12" IsVisible="{Binding MostrarError}">
+            <TextBlock Text="{Binding MensajeError}" Foreground="#FF8B8B" TextWrapping="Wrap"/>
+        </Border>
+
+        <Grid ColumnDefinitions="*,12,Auto" Margin="0,6,0,0">
+            <Button Grid.Column="0" Content="Deshacer despacho"
+                    Command="{Binding DeshacerCommand}"
+                    IsEnabled="{Binding !EstaBloqueado}"
+                    Background="#FF6B6B" Foreground="#2B0A0A"
+                    FontSize="15" FontWeight="Bold"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    CornerRadius="12" Padding="15"/>
+            <Button Grid.Column="2" Content="Cancelar" Click="Cancelar_Click"
+                    Background="#08FFFFFF" Foreground="#C2CCD6"
+                    BorderBrush="#1FFFFFFF" BorderThickness="1"
+                    FontSize="14" CornerRadius="12" Padding="18,15"/>
+        </Grid>
+    </StackPanel>
+</Window>
