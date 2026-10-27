@@ -39,6 +39,11 @@ ACTUALIZAR A UNA VERSIÓN NUEVA
 2. Cierra FarmaGestión en TODAS las PC.
 3. Ejecuta el Instalar.bat del paquete nuevo en cada PC, el mismo día. Los datos y
    el appsettings.json ya configurado se conservan.
+   Instala de la MISMA forma que la vez anterior (doble clic, o "Ejecutar como
+   administrador"), para que el programa quede en la misma carpeta. Si queda en
+   otra, no encuentra el appsettings.json con la base compartida y abre una base
+   vacía. La ventana del instalador muestra la carpeta: compárala con la ruta del
+   acceso directo (clic derecho > "Abrir la ubicación del archivo").
 La primera PC que abra la versión nueva actualiza la base de datos automáticamente.
 Una PC con la versión anterior ya no podrá entrar hasta que se actualice (la app
 lo avisa con el mensaje "Instala la versión nueva").
@@ -68,6 +73,28 @@ NOVEDADES DE LA VERSIÓN 1.1: INVENTARIO POR LOTES
 - En Despacho, si un producto tiene más de un lote, aparece un selector para elegir
   de cuál sale (por defecto, el que vence antes). El comprobante imprime el lote de
   cada línea.
+
+NOVEDADES DE LA VERSIÓN 1.2: DESHACER DESPACHO Y REPORTES
+--------------------------------------------------------
+- Deshacer despacho: una venta mal hecha se anula y las unidades vuelven a los
+  mismos lotes de los que salieron. Se puede hacer desde el comprobante, al
+  confirmar la venta, o desde Reportes con el botón "Deshacer" de cada fila.
+- Pide un motivo obligatorio y deja registro de quién la anuló y cuándo. El
+  despacho no se borra: queda marcado como "Anulado".
+- Quién puede deshacer: un usuario Empleado solo las ventas del día; el Admin,
+  ventas de cualquier día. No se puede deshacer dos veces la misma venta.
+- Las ventas hechas antes de la versión 1.1 no guardaban el lote de cada unidad y
+  no se pueden deshacer automáticamente. Si hace falta, devuelve las unidades con
+  "Ingresar mercadería".
+- Reportes: las ventas anuladas se ven atenuadas, con el total tachado, y no suman
+  en ventas totales, despachos, ticket promedio, unidades ni en el gráfico.
+- Reportes: cada despacho muestra los productos que llevó (los tres primeros y
+  "+N más") y tiene un botón "Ver" que abre su comprobante para descargarlo en PDF
+  o volver a imprimirlo.
+- El comprobante y su PDF de una venta anulada llevan la marca "ANULADO" con la
+  fecha, el usuario y el motivo.
+- Si vienes de la versión 1.0, esta actualización incluye también todo lo de la
+  1.1 (inventario por lotes, ver arriba).
 
 DESINSTALAR
 -----------
