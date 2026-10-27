@@ -47,6 +47,17 @@
             <StackPanel Spacing="3">
                 <TextBlock Text="{Binding Encabezado}" FontSize="14.5" FontWeight="SemiBold" Foreground="#EEF2F6" TextWrapping="Wrap"/>
                 <TextBlock Text="{Binding Detalle}" FontSize="12" Foreground="#8B96A4" TextWrapping="Wrap"/>
+                <Border Height="1" Background="#12FFFFFF" Margin="0,8,0,6"/>
+                <TextBlock Text="SE DEVOLVERÁ AL INVENTARIO" Classes="label" Margin="0,0,0,2"/>
+                <ScrollViewer MaxHeight="150" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Productos}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <TextBlock Text="{Binding}" FontSize="12.5" Foreground="#C2CCD6" Margin="0,2" TextTrimming="CharacterEllipsis"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </StackPanel>
         </Border>
 

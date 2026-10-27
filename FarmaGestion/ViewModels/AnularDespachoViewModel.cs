@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -22,6 +23,9 @@ public partial class AnularDespachoViewModel : ObservableObject
     [ObservableProperty] private string _detalle = string.Empty;
     [ObservableProperty] private string _motivo = string.Empty;
 
+    /// <summary>Qué se va a devolver: una línea por producto y lote, p. ej. "5 × Paracetamol · Lote L1".</summary>
+    public ObservableCollection<string> Productos { get; } = new();
+
     /// <summary>Por qué no se puede deshacer (vacío cuando sí se puede).</summary>
     [ObservableProperty] private string _bloqueo = string.Empty;
     [ObservableProperty] private bool _estaBloqueado;
@@ -44,6 +48,13 @@ public partial class AnularDespachoViewModel : ObservableObject
         Detalle = $"{comprobante.Unidades} unidad{(comprobante.Unidades == 1 ? "" : "es")} en " +
                   $"{comprobante.Lineas.Count} línea{(comprobante.Lineas.Count == 1 ? "" : "s")} · " +
                   $"total {comprobante.Total:C}";
+
+        Productos.Clear();
+        foreach (var linea in comprobante.Lineas)
+        {
+            string lote = string.IsNullOrWhiteSpace(linea.Lote) ? string.Empty : $" · Lote {linea.Lote}";
+            Productos.Add($"{linea.Cantidad} × {linea.Nombre}{lote}");
+        }
 
         Bloqueo = MotivoBloqueo(comprobante, SesionActual.EsAdmin, DateTime.Today);
         EstaBloqueado = Bloqueo.Length > 0;

@@ -21,9 +21,22 @@ public class DespachoReporteItem
     public int Unidades { get; set; }
     public string TotalTexto { get; set; } = string.Empty;
 
+    /// <summary>Resumen corto de productos, p. ej. "Paracetamol ×2 · Ibuprofeno ×1 · +2 más".</summary>
+    public string ProductosTexto { get; set; } = string.Empty;
+
     /// <summary>True si el despacho fue deshecho: se muestra atenuado y sin botón.</summary>
     public bool Anulado { get; set; }
     public bool PuedeDeshacer => !Anulado;
+
+    /// <summary>Arma el resumen de productos mostrando como máximo <paramref name="maximo"/> nombres.</summary>
+    public static string ResumirProductos(IReadOnlyList<ProductoDespacho> productos, int maximo = 3)
+    {
+        if (productos.Count == 0) return "Sin detalle";
+        var partes = productos.Take(maximo).Select(p => $"{p.Nombre} ×{p.Cantidad}").ToList();
+        int resto = productos.Count - maximo;
+        if (resto > 0) partes.Add($"+{resto} más");
+        return string.Join(" · ", partes);
+    }
 }
 
 /// <summary>Barra del gráfico "ventas por día".</summary>
@@ -237,6 +250,7 @@ public partial class ReportesViewModel : ObservableObject
                     FechaTexto = d.Fecha.ToString("dd/MM/yyyy · HH:mm"),
                     Unidades = d.Unidades,
                     TotalTexto = d.Total.ToString("C"),
+                    ProductosTexto = DespachoReporteItem.ResumirProductos(d.Productos),
                     Anulado = d.Anulado
                 });
             }

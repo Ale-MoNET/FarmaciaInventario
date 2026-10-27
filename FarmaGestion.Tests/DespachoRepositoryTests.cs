@@ -475,3 +475,44 @@ public class AnularDespachoTests
         Assert.Contains("anterior al control por lotes", FarmaGestion.ViewModels.AnularDespachoViewModel.MotivoBloqueo(sinLote, esAdmin: true, Hoy));
     }
 }
+
+public class ReporteProductosTests
+{
+    [Fact]
+    public async Task Reporte_IncluyeLosProductosDeCadaDespachoSumandoLotes()
+    {
+        using var factory = new TestDbContextFactory();
+        var repo = new DespachoRepository(factory);
+        int a, b;
+        await using (var ctx = await factory.CreateDbContextAsync())
+        {
+            var hoy = DateTime.Today;
+            var medA = new Medicamentos { CodigoBarras = "A", Nombre = "Alfa", Precio = 1m };
+            medA.Lotes.Add(new Lote { NumeroLote = "L1", FechaVencimiento = hoy.AddDays(10), Existencias = 1 });
+            medA.Lotes.Add(new Lote { NumeroLote = "L2", FechaVencimiento = hoy.AddDays(20), Existencias = 5 });
+            var medB = new Medicamentos { CodigoBarras = "B", Nombre = "Beta", Precio = 1m };
+            medB.Lotes.Add(new Lote { NumeroLote = "L1", FechaVencimiento = hoy.AddDays(10), Existencias = 5 });
+            ctx.AddRange(medA, medB);
+            await ctx.SaveChangesAsync();
+            a = medA.Id; b = medB.Id;
+        }
+
+        await repo.ConfirmarAsync(new[] { new LineaDespacho(a, 3), new LineaDespacho(b, 1) }); // Alfa sale de dos lotes
+
+        var r = await repo.GenerarReporteAsync(DateTime.Today.AddDays(-1), DateTime.Today.AddDays(1));
+
+        var productos = Assert.Single(r.Despachos).Productos;
+        Assert.Equal(new[] { ("Alfa", 3), ("Beta", 1) }, productos.Select(p => (p.Nombre, p.Cantidad)).ToArray());
+    }
+
+    [Fact]
+    public void ResumirProductos_MuestraTresYCuentaElResto()
+    {
+        var lista = new[] { new ProductoDespacho("Uno", 2), new ProductoDespacho("Dos", 1),
+                            new ProductoDespacho("Tres", 4), new ProductoDespacho("Cuatro", 1), new ProductoDespacho("Cinco", 1) };
+
+        Assert.Equal("Uno ×2 · Dos ×1 · Tres ×4 · +2 más", FarmaGestion.ViewModels.DespachoReporteItem.ResumirProductos(lista));
+        Assert.Equal("Uno ×2 · Dos ×1", FarmaGestion.ViewModels.DespachoReporteItem.ResumirProductos(lista.Take(2).ToList()));
+        Assert.Equal("Sin detalle", FarmaGestion.ViewModels.DespachoReporteItem.ResumirProductos(Array.Empty<ProductoDespacho>()));
+    }
+}

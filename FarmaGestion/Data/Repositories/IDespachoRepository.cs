@@ -54,8 +54,15 @@ public record ComprobanteDespacho(int Id, DateTime Fecha, decimal Total, IReadOn
 /// <summary>Resumen de un producto en el periodo (unidades e ingreso).</summary>
 public record ProductoResumen(string Nombre, int Unidades, decimal Ingreso);
 
+/// <summary>Un producto dentro de un despacho del reporte (unidades sumadas entre lotes).</summary>
+public record ProductoDespacho(string Nombre, int Cantidad);
+
 /// <summary>Un despacho con su conteo de unidades para el reporte. Los anulados se listan pero no suman.</summary>
-public record DespachoReporte(int Id, DateTime Fecha, int Unidades, decimal Total, bool Anulado = false);
+public record DespachoReporte(int Id, DateTime Fecha, int Unidades, decimal Total, bool Anulado = false)
+{
+    /// <summary>Productos del despacho en el orden en que se vendieron, para reconocer la venta en la tabla.</summary>
+    public IReadOnlyList<ProductoDespacho> Productos { get; init; } = Array.Empty<ProductoDespacho>();
+}
 
 /// <summary>Total de ventas de un día (para el gráfico de barras).</summary>
 public record VentaDia(DateTime Dia, decimal Total);

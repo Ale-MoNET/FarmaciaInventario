@@ -25,6 +25,20 @@ public partial class ReportesView : UserControl
             await vm.CargarVencimientosAsync();
     }
 
+    private async void BtnVerDespacho_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Control { DataContext: DespachoReporteItem item }) return;
+        if (TopLevel.GetTopLevel(this) is not Window owner) return;
+        if (DataContext is not ReportesViewModel vm) return;
+
+        var comprobante = await vm.ObtenerComprobanteAsync(item.Id);
+        if (comprobante is null) return;
+
+        // Mismo comprobante que en caja, en modo consulta (permite descargar, imprimir o deshacer).
+        var ventana = new ComprobanteWindow(comprobante, consulta: true);
+        await ventana.ShowDialog(owner);
+    }
+
     private async void BtnDeshacerDespacho_Click(object? sender, RoutedEventArgs e)
     {
         if (sender is not Control { DataContext: DespachoReporteItem item }) return;

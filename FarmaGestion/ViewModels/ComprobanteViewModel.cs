@@ -38,9 +38,13 @@ public partial class ComprobanteViewModel : ObservableObject
     [ObservableProperty] private bool _hayEstado;
     [ObservableProperty] private string _estadoColor = "#5CE8B4";
 
-    public ComprobanteViewModel(ComprobanteDespacho comprobante)
+    private readonly bool _consulta;
+
+    /// <param name="consulta">True cuando se abre desde Reportes para ver un despacho ya registrado.</param>
+    public ComprobanteViewModel(ComprobanteDespacho comprobante, bool consulta = false)
     {
         _comprobante = comprobante;
+        _consulta = consulta;
         Anulado = comprobante.Anulado;
 
         foreach (var linea in comprobante.Lineas)
@@ -64,11 +68,14 @@ public partial class ComprobanteViewModel : ObservableObject
 
     public bool PuedeDeshacer => !Anulado;
 
-    public string TituloTexto => Anulado ? "Despacho anulado" : "Despacho confirmado";
+    public string TituloTexto => Anulado ? "Despacho anulado"
+        : _consulta ? "Comprobante de despacho" : "Despacho confirmado";
 
     public string SubtituloTexto => Anulado
         ? "Las unidades volvieron al inventario. El comprobante se conserva solo como registro."
-        : "El inventario ya fue actualizado. Puedes descargar o imprimir el detalle.";
+        : _consulta
+            ? "Detalle de un despacho ya registrado. Puedes descargarlo, imprimirlo o deshacerlo."
+            : "El inventario ya fue actualizado. Puedes descargar o imprimir el detalle.";
 
     public string AnuladoTexto
     {

@@ -250,6 +250,25 @@ public class DespachoRepository : IDespachoRepository
                 d.Anulado))
             .ToListAsync();
 
+        // Productos de cada despacho (sumando lotes), en el orden en que se agregaron.
+        var ids = despachos.Select(d => d.Id).ToList();
+        var lineas = await context.DetallesDespacho
+            .Where(x => ids.Contains(x.DespachoId))
+            .OrderBy(x => x.Id)
+            .Select(x => new { x.DespachoId, x.MedicamentoId, x.Medicamento.Nombre, x.Cantidad })
+            .ToListAsync();
+        var productosPorDespacho = lineas
+            .GroupBy(x => x.DespachoId)
+            .ToDictionary(
+                g => g.Key,
+                g => (IReadOnlyList<ProductoDespacho>)g
+                    .GroupBy(x => x.MedicamentoId)
+                    .Select(p => new ProductoDespacho(p.First().Nombre, p.Sum(x => x.Cantidad)))
+                    .ToList());
+        despachos = despachos
+            .Select(d => d with { Productos = productosPorDespacho.GetValueOrDefault(d.Id) ?? Array.Empty<ProductoDespacho>() })
+            .ToList();
+
         // Los despachos deshechos se listan (trazabilidad) pero no cuentan como venta.
         var vigentes = despachos.Where(d => !d.Anulado).ToList();
 

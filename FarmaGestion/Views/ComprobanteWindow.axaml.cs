@@ -21,10 +21,12 @@ public partial class ComprobanteWindow : Window
     {
     }
 
-    public ComprobanteWindow(ComprobanteDespacho comprobante)
+    /// <param name="consulta">True al abrirlo desde Reportes: el despacho no es reciente, solo se consulta.</param>
+    public ComprobanteWindow(ComprobanteDespacho comprobante, bool consulta = false)
     {
         InitializeComponent();
-        DataContext = new ComprobanteViewModel(comprobante);
+        DataContext = new ComprobanteViewModel(comprobante, consulta);
+        if (consulta) Title = "Comprobante de despacho";
 
         Opened += (_, _) => BtnDescargar.Focus();
     }

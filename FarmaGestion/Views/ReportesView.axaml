@@ -313,7 +313,7 @@
                 <Border Grid.Column="0" CornerRadius="14" BorderBrush="#12FFFFFF" BorderThickness="1"
                         Background="#04FFFFFF" ClipToBounds="True">
                     <Grid RowDefinitions="Auto,*">
-                        <Grid Grid.Row="0" ColumnDefinitions="124,*,64,110,100" Background="#08FFFFFF" >
+                        <Grid Grid.Row="0" ColumnDefinitions="116,*,52,100,150" Background="#08FFFFFF" >
                             <TextBlock Grid.Column="0" Text="No. DESPACHO" Classes="eyebrow" Margin="20,13"/>
                             <TextBlock Grid.Column="1" Text="FECHA Y HORA" Classes="eyebrow" Margin="0,13"/>
                             <TextBlock Grid.Column="2" Text="ÍTEMS" Classes="eyebrow" Margin="0,13" HorizontalAlignment="Center"/>
@@ -328,26 +328,36 @@
                                         <DataTemplate x:DataType="vm:DespachoReporteItem">
                                             <Border BorderBrush="#0CFFFFFF" BorderThickness="0,0,0,1"
                                                     Opacity="{Binding Anulado, Converter={StaticResource AnuladoOpacidad}}">
-                                                <Grid ColumnDefinitions="124,*,64,110,100" Height="46">
+                                                <Grid ColumnDefinitions="116,*,52,100,150" Height="54">
                                                     <TextBlock Grid.Column="0" Text="{Binding IdTexto}" Margin="20,0"
                                                                FontFamily="Consolas, monospace" FontSize="12.5" Foreground="#5CE8B4" VerticalAlignment="Center"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding FechaTexto}" FontSize="13" Foreground="#C2CCD6" VerticalAlignment="Center"/>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2" Margin="0,0,12,0">
+                                                        <TextBlock Text="{Binding FechaTexto}" FontSize="13" Foreground="#C2CCD6"/>
+                                                        <TextBlock Text="{Binding ProductosTexto}" FontSize="11.5" Foreground="#8B96A4"
+                                                                   TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding ProductosTexto}"/>
+                                                    </StackPanel>
                                                     <TextBlock Grid.Column="2" Text="{Binding Unidades}" HorizontalAlignment="Center"
                                                                FontFamily="Consolas, monospace" FontSize="13" Foreground="#8B96A4" VerticalAlignment="Center"/>
                                                     <TextBlock Grid.Column="3" Text="{Binding TotalTexto}" Margin="0,0,12,0" HorizontalAlignment="Right"
                                                                FontFamily="Consolas, monospace" FontSize="13.5" FontWeight="SemiBold" Foreground="#EEF2F6" VerticalAlignment="Center"
                                                                TextDecorations="{Binding Anulado, Converter={StaticResource AnuladoTachado}}"/>
-                                                    <Button Grid.Column="4" Content="Deshacer" Click="BtnDeshacerDespacho_Click"
-                                                            IsVisible="{Binding PuedeDeshacer}"
-                                                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                            FontSize="11.5" Padding="10,4" CornerRadius="8"
-                                                            Background="#08FFFFFF" Foreground="#FF8B8B"
-                                                            BorderBrush="#2EFF6B6B" BorderThickness="1"/>
-                                                    <Border Grid.Column="4" IsVisible="{Binding Anulado}"
-                                                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                            CornerRadius="999" Padding="10,3" Background="#24FF6B6B">
-                                                        <TextBlock Text="Anulado" FontSize="11" FontWeight="SemiBold" Foreground="#FF8B8B"/>
-                                                    </Border>
+                                                    <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6"
+                                                                HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <Button Content="Ver" Click="BtnVerDespacho_Click"
+                                                                FontSize="11.5" Padding="10,4" CornerRadius="8"
+                                                                Background="#08FFFFFF" Foreground="#C2CCD6"
+                                                                BorderBrush="#1FFFFFFF" BorderThickness="1"
+                                                                ToolTip.Tip="Abre el comprobante con el detalle por lote"/>
+                                                        <Button Content="Deshacer" Click="BtnDeshacerDespacho_Click"
+                                                                IsVisible="{Binding PuedeDeshacer}"
+                                                                FontSize="11.5" Padding="10,4" CornerRadius="8"
+                                                                Background="#08FFFFFF" Foreground="#FF8B8B"
+                                                                BorderBrush="#2EFF6B6B" BorderThickness="1"/>
+                                                        <Border IsVisible="{Binding Anulado}" VerticalAlignment="Center"
+                                                                CornerRadius="999" Padding="10,3" Background="#24FF6B6B">
+                                                            <TextBlock Text="Anulado" FontSize="11" FontWeight="SemiBold" Foreground="#FF8B8B"/>
+                                                        </Border>
+                                                    </StackPanel>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
